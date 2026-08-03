@@ -9,5 +9,11 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ]
+  },
+  modules: ['@nuxt/fonts'],
+  fonts: {
+    families: [
+      { name: "IBM Plex Mono", provider: 'google' }
+    ]
   }
 })

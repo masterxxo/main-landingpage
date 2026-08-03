@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavigationOverlay />
     <HeroSection />
+    <NavigationOverlay />
   </div>
 </template>

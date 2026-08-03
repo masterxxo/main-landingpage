@@ -7,12 +7,12 @@
           <div class="w-5.5 h-px bg-white"></div>
         </button>
         <nav>
-          <a>Nav 1</a>
-          <a>Nav 2</a>
-          <a>Nav 3</a>
+          <a>Apps</a>
+          <a>About</a>
+          <a>Contact</a>
         </nav>
         <div>
-          <button>Contact</button>
+          <button class="contact-btn">CONTACT</button>
         </div>
         <div class="absolute w-full bg-white/20 h-px bottom-0"></div>
       </div>
