@@ -25,7 +25,9 @@ let geometry: THREE.PlaneGeometry | null = null;
 let textures: THREE.Texture[] = [];
 let rafId = 0;
 let resizeObserver: ResizeObserver | null = null;
+let flipStart: number = 0;
 
+const FLIP_DURATION: number = 1600;
 const pointerTarget = new THREE.Vector2(0, 0)
 const pointerCurrent = new THREE.Vector2(0, 0)
 
@@ -64,7 +66,7 @@ function updateCoverScale() {
     scale.set(boxRatio / imageRatio, 1)
   }
 
-   scale.multiplyScalar(0.94)
+   scale.multiplyScalar(0.82)
 }
 
 function resize() {
@@ -104,14 +106,18 @@ onMounted(async () => {
 
   scene = new THREE.Scene()
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
-  geometry = new THREE.PlaneGeometry(2, 2)
+  geometry = new THREE.PlaneGeometry(2.4, 2.4)
 
   material = new THREE.ShaderMaterial({
     vertexShader,
     fragmentShader,
+    side: THREE.DoubleSide,
     uniforms: {
       uTexture: { value: texture },
       uDepth: { value: depth },
+      uFlip: { value: 0 },
+      uPerspective: { value: 0.7 },
+      uApproach: { value: 1.8 },
       uPointer: { value: new THREE.Vector2(0, 0) },
       uCoverScale: { value: new THREE.Vector2(1, 1) },
       uStrength: { value: reducedMotion ? 0 : props.strength },
@@ -144,12 +150,20 @@ onMounted(async () => {
   const loop = () => {
     const elapsed = clock.getElapsedTime()
 
+    if(flipStart === 0) flipStart = performance.now();
+
+    const t = Math.min((performance.now() - flipStart) / FLIP_DURATION, 1);
+    const eased = 1 - Math.pow(1 - Math.pow(t, 2.2), 2.2)
+    const flip = 0.02 + 0.98 * eased;
+
     pointerCurrent.x += (pointerTarget.x - pointerCurrent.x) * props.damping
     pointerCurrent.y += (pointerTarget.y - pointerCurrent.y) * props.damping
 
     if (material) {
       const pointerUniform = material.uniforms.uPointer?.value;
       pointerUniform.copy(pointerCurrent);
+      material.uniforms.uFlip.value = flip
+      material.uniforms.uStrength.value = props.strength * flip
       material.uniforms.uTime.value = elapsed;
     }
 
@@ -196,7 +210,6 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 900ms ease;
 }
 
 .hero__canvas.is-ready {

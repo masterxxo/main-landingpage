@@ -2,10 +2,29 @@
 // potrafią rozjechać narzędzia skanujące bloki <script> w SFC.
 
 export const vertexShader = /* glsl */ `
+  uniform float uFlip;
+  uniform float uPerspective;
+  uniform float uApproach;
+
   varying vec2 vUv;
+  varying float vShade;
+
   void main() {
     vUv = uv;
-    gl_Position = vec4(position, 1.0);
+
+    float c = uFlip;
+    float s = sqrt(max(1.0 - c * c, 0.0));
+
+    float x = position.x * c;
+    float z = position.x * s;
+
+    vShade = mix(0.25, 1.0, c);
+
+    // karta startuje odsunięta i dolatuje do kamery wraz z obrotem
+    float approach = (1.0 - uFlip) * uApproach;
+
+    float w = 1.0 + (z + approach) * uPerspective;
+    gl_Position = vec4(x, position.y, 0.0, w);
   }
 `
 
@@ -21,6 +40,7 @@ export const fragmentShader = /* glsl */ `
   uniform float uDrift;
 
   varying vec2 vUv;
+  varying float vShade;
 
   const int STEPS = 16;
 
@@ -66,6 +86,6 @@ export const fragmentShader = /* glsl */ `
     // poza zakresem tekstury robią się smugi — przycinamy do krawędzi
     shifted = clamp(shifted, vec2(0.001), vec2(0.999));
 
-    gl_FragColor = texture2D(uTexture, shifted);
+    gl_FragColor = vec4(texture2D(uTexture, shifted).rgb * vShade, 1.0);
   }
 `
