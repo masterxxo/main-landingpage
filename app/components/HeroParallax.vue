@@ -6,7 +6,7 @@ const props = defineProps({
   image: { type: String, required: true },
   depthMap: { type: String, required: true },
   // Siła przesunięcia w UV. 0.02-0.06 to bezpieczny zakres.
-  strength: { type: Number, default: 0.035 },
+  strength: { type: Number, default: 0.015 },
   // Damping lerpa. Niżej = cięższy, bardziej "kinowy" ruch.
   damping: { type: Number, default: 0.055 },
   // Ambientowy drift, żeby scena żyła gdy mysz stoi. 0 = wyłączony.
@@ -81,7 +81,6 @@ function onPointerMove(event: MouseEvent) {
   if (!container.value) return
   const rect = container.value.getBoundingClientRect()
 
-  // -1..1 względem środka kontenera, y odwrócone pod UV
   pointerTarget.set(
     ((event.clientX - rect.left) / rect.width) * 2 - 1,
     -(((event.clientY - rect.top) / rect.height) * 2 - 1),
@@ -181,13 +180,6 @@ onBeforeUnmount(() => {
   <div class="hero">
     <div ref="container" class="hero__canvas" :class="{ 'is-ready': isReady }" />
 
-    <!-- wszystko dekoracyjne nad canvasem MUSI mieć pointer-events: none -->
-    <div class="hero__frame" aria-hidden="true" />
-    <div class="hero__vignette" aria-hidden="true" />
-
-    <div class="hero__content">
-      <slot />
-    </div>
   </div>
 </template>
 
@@ -215,17 +207,5 @@ onBeforeUnmount(() => {
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.hero__vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 45%,
-    rgb(5 6 10 / 0.75) 100%
-  );
-  pointer-events: none;
-  z-index: 1;
 }
 </style>
