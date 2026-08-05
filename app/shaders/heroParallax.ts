@@ -2,9 +2,10 @@
 // potrafią rozjechać narzędzia skanujące bloki <script> w SFC.
 
 export const vertexShader = /* glsl */ `
-  uniform float uFlip;
+uniform float uFlip;
   uniform float uPerspective;
   uniform float uApproach;
+  uniform float uScale;
 
   varying vec2 vUv;
   varying float vShade;
@@ -15,16 +16,18 @@ export const vertexShader = /* glsl */ `
     float c = uFlip;
     float s = sqrt(max(1.0 - c * c, 0.0));
 
-    float x = position.x * c;
-    float z = position.x * s;
+    // uScale kurczy CAŁĄ kartę - obie osie - więc rogi są widoczne
+    vec2 p = position.xy * uScale;
+
+    float x = p.x * c;
+    float z = p.x * s;
 
     vShade = mix(0.25, 1.0, c);
 
-    // karta startuje odsunięta i dolatuje do kamery wraz z obrotem
     float approach = (1.0 - uFlip) * uApproach;
 
     float w = 1.0 + (z + approach) * uPerspective;
-    gl_Position = vec4(x, position.y, 0.0, w);
+    gl_Position = vec4(x, p.y, 0.0, w);
   }
 `
 

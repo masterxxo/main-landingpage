@@ -101,7 +101,8 @@ onMounted(async () => {
   const [texture, depth] = await Promise.all([
     loadTexture(props.image),
     loadTexture(props.depthMap),
-  ])
+  ]);
+  
   textures = [texture, depth]
 
   scene = new THREE.Scene()
@@ -118,6 +119,7 @@ onMounted(async () => {
       uFlip: { value: 0 },
       uPerspective: { value: 0.7 },
       uApproach: { value: 1.8 },
+      uScale : { value: 0.55 },
       uPointer: { value: new THREE.Vector2(0, 0) },
       uCoverScale: { value: new THREE.Vector2(1, 1) },
       uStrength: { value: reducedMotion ? 0 : props.strength },
@@ -164,6 +166,7 @@ onMounted(async () => {
       pointerUniform.copy(pointerCurrent);
       material.uniforms.uFlip.value = flip
       material.uniforms.uStrength.value = props.strength * flip
+      material.uniforms.uScale.value = 0.55 + 0.45 * eased
       material.uniforms.uTime.value = elapsed;
     }
 
