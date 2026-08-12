@@ -1,7 +1,8 @@
 <template>
   <div class="relative overflow-hidden h-screen w-full">
-    <ImgTilt>
-      <img src="/img/hero_1.png" class="min-h-screen max-w-max" />
-    </ImgTilt>
+    <HeroParallax image="/img/hero_1.png" depth-map="/img/hero-depth-12.png">
+      <h1>Test text</h1>
+    </HeroParallax>
+    <img src="/img/hero_1.png" class="min-h-screen max-w-max" />
   </div>
 </template>
