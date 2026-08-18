@@ -6,10 +6,10 @@
           <div class="w-6.5 h-px bg-white"></div>
           <div class="w-5.5 h-px bg-white"></div>
         </button>
-        <nav>
-          <a>Apps</a>
-          <a>About</a>
-          <a>Contact</a>
+        <nav class="flex items-center gap-3">
+          <a href="#"><ScrambleLink text="Apps" /></a>
+          <a href="#"><ScrambleLink text="About" /></a>
+          <a href="#"><ScrambleLink text="Contact"/></a>
         </nav>
         <div>
           <button class="contact-btn">CONTACT</button>
