@@ -147,10 +147,10 @@ onMounted(async () => {
     window.addEventListener('pointerleave', onPointerLeave, { passive: true })
   }
 
-  const clock = new THREE.Clock()
+  const clock = new THREE.Timer()
 
   const loop = () => {
-    const elapsed = clock.getElapsedTime()
+    const elapsed = clock.getElapsed()
 
     if(flipStart === 0) flipStart = performance.now();
 
