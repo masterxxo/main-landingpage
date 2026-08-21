@@ -5,13 +5,13 @@ import { fragmentShader, vertexShader } from '~/shaders/heroParallax'
 const props = defineProps({
   image: { type: String, required: true },
   depthMap: { type: String, required: true },
-  // Siła przesunięcia w UV. 0.02-0.06 to bezpieczny zakres.
   strength: { type: Number, default: 0.015 },
-  // Damping lerpa. Niżej = cięższy, bardziej "kinowy" ruch.
   damping: { type: Number, default: 0.055 },
-  // Ambientowy drift, żeby scena żyła gdy mysz stoi. 0 = wyłączony.
   drift: { type: Number, default: 0.15 },
+  active: { type: Boolean, default: true },
 })
+
+const { isVideoVisible } = useBoot()
 
 const container = ref<HTMLDivElement | null>(null);
 const isReady = ref(false);
@@ -152,7 +152,13 @@ onMounted(async () => {
   const loop = () => {
     const elapsed = clock.getElapsed()
 
-    if(flipStart === 0) flipStart = performance.now();
+    if (!props.active) {
+      if (renderer && scene && camera) renderer.render(scene, camera)
+      rafId = requestAnimationFrame(loop)
+      return
+    }
+
+    if (flipStart === 0) flipStart = performance.now()
 
     const t = Math.min((performance.now() - flipStart) / FLIP_DURATION, 1);
     const eased = 1 - Math.pow(1 - Math.pow(t, 2.2), 2.2)
@@ -195,7 +201,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="hero">
-    <div ref="container" class="hero__canvas" :class="{ 'is-ready': isReady }" />
+    <div ref="container" class="hero__canvas" :class="{ 'is-ready': isReady, 'is-transparent': !isVideoVisible }" />
 
   </div>
 </template>
@@ -206,7 +212,13 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100svh;
   overflow: hidden;
+  background: transparent;
+  transition: background 600ms ease; 
+}
+
+.hero.is-transparent {
   background: #05060a;
+  transition: background 600ms ease; 
 }
 
 .hero__canvas {
