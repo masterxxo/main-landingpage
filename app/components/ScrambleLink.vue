@@ -10,6 +10,7 @@ interface ScrambleLinkProps {
   fontFamily?: string
   hover?: boolean
   plain?: boolean
+  sequential?: boolean
 }
 
 const props = withDefaults(defineProps<ScrambleLinkProps>(), {
@@ -22,10 +23,14 @@ const props = withDefaults(defineProps<ScrambleLinkProps>(), {
   fontFamily: 'inherit',
   hover: true,
   plain: false,
+  sequential: false,
 })
 
 const displayed = ref(props.text)
 const isActive = ref(false)
+const animatedCharacterCount = computed<number>(
+  () => [...props.text].filter((char: string) => char !== ' ').length,
+)
 
 let rafId = 0
 let startedAt = 0
@@ -33,6 +38,32 @@ let lastFrame = 0
 
 function randomChar(): string {
   return props.charset[Math.floor(Math.random() * props.charset.length)] ?? ''
+}
+
+function buildSequentialText(elapsed: number): { text: string, complete: boolean } {
+  const activeStep = Math.floor(elapsed / props.scrambleDuration)
+
+  if (activeStep >= animatedCharacterCount.value) {
+    return { text: props.text, complete: true }
+  }
+
+  let text = ''
+  let sequenceStep = 0
+
+  for (let index = 0; index < props.text.length; index++) {
+    const char = props.text[index] ?? ''
+
+    if (char === ' ') text += ' '
+    else {
+      if (sequenceStep < activeStep) text += char
+      else if (sequenceStep === activeStep) text += randomChar()
+      else text += ' '
+
+      sequenceStep += 1
+    }
+  }
+
+  return { text, complete: false }
 }
 
 function tick(): void {
@@ -43,6 +74,19 @@ function tick(): void {
 
   if (now - lastFrame >= frameInterval) {
     lastFrame = now
+
+    if (props.sequential) {
+      const frame = buildSequentialText(elapsed)
+      displayed.value = frame.text
+
+      if (frame.complete) {
+        rafId = 0
+        return
+      }
+
+      rafId = requestAnimationFrame(tick)
+      return
+    }
 
     let out = ''
     let allResolved = true
@@ -84,15 +128,18 @@ function tick(): void {
 }
 
 function start(): void {
-  isActive.value = true
   if (rafId) cancelAnimationFrame(rafId)
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    isActive.value = true
     displayed.value = props.text
     rafId = 0
     return
   }
 
+  if (props.sequential) displayed.value = props.text.replace(/\S/g, ' ')
+
+  isActive.value = true
   startedAt = performance.now()
   lastFrame = 0
   rafId = requestAnimationFrame(tick)
@@ -115,7 +162,11 @@ onBeforeUnmount(() => {
 <template>
   <span
     class="scramble"
-    :class="{ 'is-active': isActive, 'is-interactive': hover }"
+    :class="{
+      'is-active': isActive,
+      'is-interactive': hover,
+      'is-sequential': sequential,
+    }"
     :style="{
       '--wipe-duration': `${wipeDuration}ms`,
       '--font-size': `${fontSize}px`,
@@ -127,6 +178,9 @@ onBeforeUnmount(() => {
     @focusout="hover && stop()"
   >
     <span v-if="!plain" class="scramble__wipe" aria-hidden="true" />
+    <span v-if="sequential" class="scramble__sizer" aria-hidden="true">
+      {{ text }}
+    </span>
     <span class="scramble__text">{{ displayed }}</span>
     <span v-if="!plain" class="scramble__text scramble__text--dark" aria-hidden="true">
       {{ displayed }}
@@ -147,6 +201,15 @@ onBeforeUnmount(() => {
   visibility: hidden;
 }
 
+.scramble.is-sequential {
+  display: inline-grid;
+}
+
+.scramble.is-sequential .scramble__sizer,
+.scramble.is-sequential .scramble__text {
+  grid-area: 1 / 1;
+}
+
 .scramble__wipe {
   position: absolute;
   inset: 0;
@@ -160,16 +223,24 @@ onBeforeUnmount(() => {
   transform: scaleX(1);
 }
 
-.scramble__text {
-  position: relative;
-  z-index: 1;
+.scramble__text,
+.scramble__sizer {
   display: block;
   white-space: pre;
-  color: #fff;
   text-transform: uppercase;
   font-family: var(--font-family);
   font-size: var(--font-size);
   font-weight: 900;
+}
+
+.scramble__text {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+}
+
+.scramble__sizer {
+  visibility: hidden;
 }
 
 .scramble__text--dark {

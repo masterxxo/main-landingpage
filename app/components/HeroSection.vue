@@ -18,9 +18,12 @@
           :ref="instance => setLabelRef(index, instance)"
           :text="label.text"
           :font-size="140"
+          :scramble-duration="140"
+          :scramble-fps="60"
           font-family="Cabinet Grotesk"
           :hover="false"
           plain
+          sequential
         />
       </div>
     </div>
@@ -43,7 +46,7 @@ const labels: HeroLabel[] = [
 
 const { isRevealed } = useBoot()
 const showLabels = ref<boolean>(false)
-const labelRefs = useScrambleRevealGroup(labels.length, { gap: 180 })
+const labelRefs = useScrambleRevealGroup(labels.length, { gap: 600 })
 
 function setLabelRef(index: number, instance: unknown): void {
   const labelRef = labelRefs[index]
@@ -94,7 +97,8 @@ function setLabelRef(index: number, instance: unknown): void {
   padding: 0;
 }
 
-.hero-labels :deep(.scramble__text) {
+.hero-labels :deep(.scramble__text),
+.hero-labels :deep(.scramble__sizer) {
   line-height: 1;
 }
 </style>
