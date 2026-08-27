@@ -1,41 +1,65 @@
 <script setup lang="ts">
+import { gsap } from 'gsap'
 import * as THREE from 'three'
 import { fragmentShader, vertexShader } from '~/shaders/heroParallax'
 
-const props = defineProps({
-  image: { type: String, required: true },
-  depthMap: { type: String, required: true },
-  strength: { type: Number, default: 0.015 },
-  damping: { type: Number, default: 0.055 },
-  drift: { type: Number, default: 0.15 },
-  active: { type: Boolean, default: true },
+interface HeroParallaxProps {
+  image: string
+  depthMap: string
+  strength?: number
+  damping?: number
+  drift?: number
+  active?: boolean
+}
+
+interface HeroUniforms extends Record<string, THREE.IUniform> {
+  uTexture: THREE.IUniform<THREE.Texture>
+  uDepth: THREE.IUniform<THREE.Texture>
+  uFlip: THREE.IUniform<number>
+  uPerspective: THREE.IUniform<number>
+  uApproach: THREE.IUniform<number>
+  uScale: THREE.IUniform<number>
+  uPointer: THREE.IUniform<THREE.Vector2>
+  uCoverScale: THREE.IUniform<THREE.Vector2>
+  uStrength: THREE.IUniform<number>
+  uTime: THREE.IUniform<number>
+  uDrift: THREE.IUniform<number>
+}
+
+const props = withDefaults(defineProps<HeroParallaxProps>(), {
+  strength: 0.015,
+  damping: 0.055,
+  drift: 0.15,
+  active: true,
 })
 
 const { isVideoVisible } = useBoot()
 
-const container = ref<HTMLDivElement | null>(null);
-const isReady = ref(false);
+const container = ref<HTMLDivElement | null>(null)
+const isReady = ref<boolean>(false)
 
-let renderer: THREE.WebGLRenderer | null = null;
-let scene: THREE.Scene | null = null;
-let camera: THREE.OrthographicCamera | null = null;
-let mesh: THREE.Mesh | null = null;
-let material: THREE.ShaderMaterial | null = null;
-let geometry: THREE.PlaneGeometry | null = null;
-let textures: THREE.Texture[] = [];
-let rafId = 0;
-let resizeObserver: ResizeObserver | null = null;
-let flipStart: number = 0;
+let renderer: THREE.WebGLRenderer | null = null
+let scene: THREE.Scene | null = null
+let camera: THREE.OrthographicCamera | null = null
+let mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial> | null = null
+let material: THREE.ShaderMaterial | null = null
+let geometry: THREE.PlaneGeometry | null = null
+let uniforms: HeroUniforms | null = null
+let textures: THREE.Texture[] = []
+let rafId = 0
+let resizeObserver: ResizeObserver | null = null
+let entranceTimeline: gsap.core.Timeline | null = null
+let pointerXTo: gsap.QuickToFunc | null = null
+let pointerYTo: gsap.QuickToFunc | null = null
+let isUnmounted = false
 
-const FLIP_DURATION: number = 1600;
-const pointerTarget = new THREE.Vector2(0, 0)
-const pointerCurrent = new THREE.Vector2(0, 0)
+const FLIP_DURATION = 1.6
 
-function loadTexture(url: string) {
-  return new Promise((resolve, reject) => {
+function loadTexture(url: string): Promise<THREE.Texture> {
+  return new Promise<THREE.Texture>((resolve, reject) => {
     new THREE.TextureLoader().load(
       url,
-      (tex) => {
+      (tex: THREE.Texture) => {
         tex.minFilter = THREE.LinearFilter
         tex.magFilter = THREE.LinearFilter
         tex.generateMipmaps = false
@@ -49,15 +73,16 @@ function loadTexture(url: string) {
   })
 }
 
-function updateCoverScale() {
-  if (!container.value || !material) return
+function updateCoverScale(): void {
+  if (!container.value || !uniforms) return
 
-  const texture = material.uniforms.uTexture?.value
-  if (!texture || !texture.image) return
+  const texture = uniforms.uTexture.value
+  const image = texture.image as { width?: number, height?: number } | undefined
+  if (!image?.width || !image.height) return
 
   const boxRatio = container.value.clientWidth / container.value.clientHeight
-  const imageRatio = texture.image.width / texture.image.height
-  const scale = material.uniforms.uCoverScale?.value
+  const imageRatio = image.width / image.height
+  const scale = uniforms.uCoverScale.value
 
   if (boxRatio > imageRatio) {
     scale.set(1, imageRatio / boxRatio)
@@ -66,10 +91,10 @@ function updateCoverScale() {
     scale.set(boxRatio / imageRatio, 1)
   }
 
-   scale.multiplyScalar(0.82)
+  scale.multiplyScalar(0.82)
 }
 
-function resize() {
+function resize(): void {
   if (!container.value || !renderer) return
   const { clientWidth: w, clientHeight: h } = container.value
   if (!w || !h) return
@@ -79,18 +104,17 @@ function resize() {
   updateCoverScale()
 }
 
-function onPointerMove(event: MouseEvent) {
+function onPointerMove(event: PointerEvent): void {
   if (!container.value) return
   const rect = container.value.getBoundingClientRect()
 
-  pointerTarget.set(
-    ((event.clientX - rect.left) / rect.width) * 2 - 1,
-    -(((event.clientY - rect.top) / rect.height) * 2 - 1),
-  )
+  pointerXTo?.(((event.clientX - rect.left) / rect.width) * 2 - 1)
+  pointerYTo?.(-(((event.clientY - rect.top) / rect.height) * 2 - 1))
 }
 
-function onPointerLeave() {
-  pointerTarget.set(0, 0)
+function onPointerLeave(): void {
+  pointerXTo?.(0)
+  pointerYTo?.(0)
 }
 
 onMounted(async () => {
@@ -98,34 +122,42 @@ onMounted(async () => {
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-  const [texture, depth] = await Promise.all([
+  const [texture, depth]: [THREE.Texture, THREE.Texture] = await Promise.all([
     loadTexture(props.image),
     loadTexture(props.depthMap),
-  ]);
-  
+  ])
+
+  if (isUnmounted) {
+    texture.dispose()
+    depth.dispose()
+    return
+  }
+
   textures = [texture, depth]
 
   scene = new THREE.Scene()
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
   geometry = new THREE.PlaneGeometry(2.4, 2.4)
 
+  uniforms = {
+    uTexture: { value: texture },
+    uDepth: { value: depth },
+    uFlip: { value: reducedMotion ? 1 : 0.02 },
+    uPerspective: { value: 0.7 },
+    uApproach: { value: 1.8 },
+    uScale: { value: reducedMotion ? 1 : 0.55 },
+    uPointer: { value: new THREE.Vector2(0, 0) },
+    uCoverScale: { value: new THREE.Vector2(1, 1) },
+    uStrength: { value: 0 },
+    uTime: { value: 0 },
+    uDrift: { value: reducedMotion ? 0 : props.drift },
+  }
+
   material = new THREE.ShaderMaterial({
     vertexShader,
     fragmentShader,
     side: THREE.DoubleSide,
-    uniforms: {
-      uTexture: { value: texture },
-      uDepth: { value: depth },
-      uFlip: { value: 0 },
-      uPerspective: { value: 0.7 },
-      uApproach: { value: 1.8 },
-      uScale : { value: 0.55 },
-      uPointer: { value: new THREE.Vector2(0, 0) },
-      uCoverScale: { value: new THREE.Vector2(1, 1) },
-      uStrength: { value: reducedMotion ? 0 : props.strength },
-      uTime: { value: 0 },
-      uDrift: { value: reducedMotion ? 0 : props.drift },
-    },
+    uniforms,
   })
 
   mesh = new THREE.Mesh(geometry, material)
@@ -143,38 +175,43 @@ onMounted(async () => {
   resizeObserver.observe(container.value)
 
   if (!reducedMotion) {
+    const pointerDuration = Math.max(props.damping * 10, 0.1)
+    pointerXTo = gsap.quickTo(uniforms.uPointer.value, 'x', {
+      duration: pointerDuration,
+      ease: 'power2.out',
+    })
+    pointerYTo = gsap.quickTo(uniforms.uPointer.value, 'y', {
+      duration: pointerDuration,
+      ease: 'power2.out',
+    })
+
+    entranceTimeline = gsap.timeline({ paused: true })
+      .to(uniforms.uFlip, {
+        value: 1,
+        duration: FLIP_DURATION,
+        ease: 'power2.inOut',
+      }, 0)
+      .to(uniforms.uScale, {
+        value: 1,
+        duration: FLIP_DURATION,
+        ease: 'power2.inOut',
+      }, 0)
+      .to(uniforms.uStrength, {
+        value: props.strength,
+        duration: FLIP_DURATION,
+        ease: 'power2.inOut',
+      }, 0)
+
+    if (props.active) entranceTimeline.play()
+
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerleave', onPointerLeave, { passive: true })
   }
 
   const clock = new THREE.Timer()
 
-  const loop = () => {
-    const elapsed = clock.getElapsed()
-
-    if (!props.active) {
-      if (renderer && scene && camera) renderer.render(scene, camera)
-      rafId = requestAnimationFrame(loop)
-      return
-    }
-
-    if (flipStart === 0) flipStart = performance.now()
-
-    const t = Math.min((performance.now() - flipStart) / FLIP_DURATION, 1);
-    const eased = 1 - Math.pow(1 - Math.pow(t, 2.2), 2.2)
-    const flip = 0.02 + 0.98 * eased;
-
-    pointerCurrent.x += (pointerTarget.x - pointerCurrent.x) * props.damping
-    pointerCurrent.y += (pointerTarget.y - pointerCurrent.y) * props.damping
-
-    if (material) {
-      const pointerUniform = material.uniforms.uPointer?.value;
-      pointerUniform.copy(pointerCurrent);
-      material.uniforms.uFlip.value = flip
-      material.uniforms.uStrength.value = props.strength * flip
-      material.uniforms.uScale.value = 0.55 + 0.45 * eased
-      material.uniforms.uTime.value = elapsed;
-    }
+  const loop = (): void => {
+    if (props.active && uniforms) uniforms.uTime.value = clock.getElapsed()
 
     if (renderer && scene && camera) renderer.render(scene, camera)
     rafId = requestAnimationFrame(loop)
@@ -183,15 +220,24 @@ onMounted(async () => {
   loop()
 })
 
+watch(() => props.active, (isActive: boolean) => {
+  if (isActive) entranceTimeline?.play()
+  else entranceTimeline?.pause()
+})
+
 onBeforeUnmount(() => {
+  isUnmounted = true
   cancelAnimationFrame(rafId)
+  entranceTimeline?.kill()
+  pointerXTo?.tween.kill()
+  pointerYTo?.tween.kill()
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerleave', onPointerLeave)
   if (resizeObserver) resizeObserver.disconnect()
 
-  textures.forEach(t => t.dispose())
-  if (geometry) geometry.dispose()
-  if (material) material.dispose()
+  textures.forEach((texture: THREE.Texture) => texture.dispose())
+  geometry?.dispose()
+  material?.dispose()
   if (renderer) {
     renderer.dispose()
     renderer.domElement.remove()
