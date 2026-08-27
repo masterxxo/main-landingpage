@@ -7,7 +7,8 @@ interface ScrambleRevealOptions {
   once?: boolean
 }
 
-interface ScrambleTarget {
+export interface ScrambleTarget {
+  $el?: Element
   start: () => void
   stop: () => void
 }
@@ -20,7 +21,9 @@ interface ScrambleTarget {
  *
  * Zwrócony ref podpinasz przez `:ref="..."` (nie `ref="..."`).
  */
-export function useScrambleReveal(options: ScrambleRevealOptions = {}) {
+export function useScrambleReveal(
+  options: ScrambleRevealOptions = {},
+): Ref<ScrambleTarget | null> {
   const {
     threshold = 0.4,
     delay = 0,
@@ -33,7 +36,7 @@ export function useScrambleReveal(options: ScrambleRevealOptions = {}) {
   let observer: IntersectionObserver | null = null
   let timer = 0
 
-  function cleanup() {
+  function cleanup(): void {
     if (observer) {
       observer.disconnect()
       observer = null
@@ -44,15 +47,23 @@ export function useScrambleReveal(options: ScrambleRevealOptions = {}) {
     }
   }
 
+  function scheduleStart(instance: ScrambleTarget): void {
+    if (timer) clearTimeout(timer)
+    timer = window.setTimeout(() => {
+      timer = 0
+      instance.start()
+    }, delay)
+  }
+
   watch(target, (instance) => {
     cleanup()
     if (!instance) return
 
-    const el = (instance as unknown as { $el?: Element }).$el
+    const el = instance.$el
     if (!el || !(el instanceof Element)) return
 
     if (typeof IntersectionObserver === 'undefined') {
-      instance.start()
+      scheduleStart(instance)
       return
     }
 
@@ -61,10 +72,12 @@ export function useScrambleReveal(options: ScrambleRevealOptions = {}) {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue
 
-          if (timer) clearTimeout(timer)
-          timer = window.setTimeout(() => instance.start(), delay)
+          scheduleStart(instance)
 
-          if (once) cleanup()
+          if (once && observer) {
+            observer.disconnect()
+            observer = null
+          }
         }
       },
       { threshold, rootMargin },
@@ -82,12 +95,13 @@ export function useScrambleReveal(options: ScrambleRevealOptions = {}) {
  * Wersja dla grupy napisów — każdy kolejny startuje z opóźnieniem.
  *
  *   const items = useScrambleRevealGroup(3, { gap: 180 })
- *   <ScrambleLink v-for="(r, i) in items" :key="i" :ref="r" ... />
+ *   const setItemRef = (i, instance) => { items[i].value = instance }
+ *   <ScrambleLink v-for="(_, i) in items" :key="i" :ref="el => setItemRef(i, el)" ... />
  */
 export function useScrambleRevealGroup(
   count: number,
   options: ScrambleRevealOptions & { gap?: number } = {},
-) {
+): Array<Ref<ScrambleTarget | null>> {
   const { gap = 150, ...rest } = options
 
   return Array.from({ length: count }, (_, i) =>

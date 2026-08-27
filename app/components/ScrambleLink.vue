@@ -1,11 +1,27 @@
 <script setup lang="ts">
-const props = defineProps({
-  text: { type: String, required: true },
-  wipeDuration: { type: Number, default: 240 },
-  scrambleDuration: { type: Number, default: 240 },
-  stagger: { type: Number, default: 18 },
-  scrambleFps: { type: Number, default: 30 },
-  charset: { type: String, default: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&$@' },
+interface ScrambleLinkProps {
+  text: string
+  wipeDuration?: number
+  scrambleDuration?: number
+  stagger?: number
+  scrambleFps?: number
+  charset?: string
+  fontSize?: number
+  fontFamily?: string
+  hover?: boolean
+  plain?: boolean
+}
+
+const props = withDefaults(defineProps<ScrambleLinkProps>(), {
+  wipeDuration: 240,
+  scrambleDuration: 240,
+  stagger: 18,
+  scrambleFps: 30,
+  charset: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&$@',
+  fontSize: 14,
+  fontFamily: 'inherit',
+  hover: true,
+  plain: false,
 })
 
 const displayed = ref(props.text)
@@ -15,11 +31,11 @@ let rafId = 0
 let startedAt = 0
 let lastFrame = 0
 
-function randomChar() {
-  return props.charset[Math.floor(Math.random() * props.charset.length)]
+function randomChar(): string {
+  return props.charset[Math.floor(Math.random() * props.charset.length)] ?? ''
 }
 
-function tick() {
+function tick(): void {
   const now = performance.now()
   const elapsed = now - startedAt
 
@@ -67,15 +83,22 @@ function tick() {
   rafId = requestAnimationFrame(tick)
 }
 
-function start() {
+function start(): void {
   isActive.value = true
   if (rafId) cancelAnimationFrame(rafId)
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    displayed.value = props.text
+    rafId = 0
+    return
+  }
+
   startedAt = performance.now()
   lastFrame = 0
   rafId = requestAnimationFrame(tick)
 }
 
-function stop() {
+function stop(): void {
   isActive.value = false
   if (rafId) cancelAnimationFrame(rafId)
   rafId = 0
@@ -92,18 +115,20 @@ onBeforeUnmount(() => {
 <template>
   <span
     class="scramble"
-    :class="{ 'is-active': isActive }"
+    :class="{ 'is-active': isActive, 'is-interactive': hover }"
     :style="{
       '--wipe-duration': `${wipeDuration}ms`,
+      '--font-size': `${fontSize}px`,
+      '--font-family': fontFamily,
     }"
-    @mouseenter="start"
-    @mouseleave="stop"
-    @focusin="start"
-    @focusout="stop"
+    @mouseenter="hover && start()"
+    @mouseleave="hover && stop()"
+    @focusin="hover && start()"
+    @focusout="hover && stop()"
   >
-    <span class="scramble__wipe" aria-hidden="true" />
+    <span v-if="!plain" class="scramble__wipe" aria-hidden="true" />
     <span class="scramble__text">{{ displayed }}</span>
-    <span class="scramble__text scramble__text--dark" aria-hidden="true">
+    <span v-if="!plain" class="scramble__text scramble__text--dark" aria-hidden="true">
       {{ displayed }}
     </span>
   </span>
@@ -116,6 +141,10 @@ onBeforeUnmount(() => {
   padding: 0.25em 0.5em;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
+}
+
+.scramble:not(.is-interactive):not(.is-active) {
+  visibility: hidden;
 }
 
 .scramble__wipe {
@@ -138,7 +167,8 @@ onBeforeUnmount(() => {
   white-space: pre;
   color: #fff;
   text-transform: uppercase;
-  font-size:14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
   font-weight: 900;
 }
 

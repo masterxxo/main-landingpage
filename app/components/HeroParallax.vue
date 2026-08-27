@@ -33,6 +33,10 @@ const props = withDefaults(defineProps<HeroParallaxProps>(), {
   active: true,
 })
 
+const emit = defineEmits<{
+  revealed: []
+}>()
+
 const { isVideoVisible } = useBoot()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -41,7 +45,6 @@ const isReady = ref<boolean>(false)
 let renderer: THREE.WebGLRenderer | null = null
 let scene: THREE.Scene | null = null
 let camera: THREE.OrthographicCamera | null = null
-let mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial> | null = null
 let material: THREE.ShaderMaterial | null = null
 let geometry: THREE.PlaneGeometry | null = null
 let uniforms: HeroUniforms | null = null
@@ -51,8 +54,16 @@ let resizeObserver: ResizeObserver | null = null
 let entranceTimeline: gsap.core.Timeline | null = null
 let pointerXTo: gsap.QuickToFunc | null = null
 let pointerYTo: gsap.QuickToFunc | null = null
+let reducedMotion = false
+let hasRevealed = false
 
 const FLIP_DURATION = 1.6
+
+function emitRevealed(): void {
+  if (hasRevealed) return
+  hasRevealed = true
+  emit('revealed')
+}
 
 function loadTexture(url: string): Promise<THREE.Texture> {
   return new Promise<THREE.Texture>((resolve, reject) => {
@@ -119,7 +130,7 @@ function onPointerLeave(): void {
 onMounted(async () => {
   if (!container.value) return
 
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   const [texture, depth]: [THREE.Texture, THREE.Texture] = await Promise.all([
     loadTexture(props.image),
@@ -153,7 +164,7 @@ onMounted(async () => {
     uniforms,
   })
 
-  mesh = new THREE.Mesh(geometry, material)
+  const mesh = new THREE.Mesh(geometry, material)
   scene.add(mesh)
 
   renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true })
@@ -178,7 +189,7 @@ onMounted(async () => {
       ease: 'power2.out',
     })
 
-    entranceTimeline = gsap.timeline({ paused: true })
+    entranceTimeline = gsap.timeline({ paused: true, onComplete: emitRevealed })
       .to(uniforms.uFlip, {
         value: 1,
         duration: FLIP_DURATION,
@@ -200,6 +211,9 @@ onMounted(async () => {
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerleave', onPointerLeave, { passive: true })
   }
+  else if (props.active) {
+    emitRevealed()
+  }
 
   const clock = new THREE.Timer()
 
@@ -214,7 +228,8 @@ onMounted(async () => {
 })
 
 watch(() => props.active, (isActive: boolean) => {
-  if (isActive) entranceTimeline?.play()
+  if (isActive && reducedMotion && isReady.value) emitRevealed()
+  else if (isActive) entranceTimeline?.play()
   else entranceTimeline?.pause()
 })
 
@@ -238,9 +253,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="hero">
-    <div ref="container" class="hero__canvas" :class="{ 'is-ready': isReady, 'is-transparent': !isVideoVisible }" />
-
+  <div class="hero" :class="{ 'is-transparent': !isVideoVisible }">
+    <div ref="container" class="hero__canvas" :class="{ 'is-ready': isReady }" />
   </div>
 </template>
 
@@ -256,7 +270,6 @@ onBeforeUnmount(() => {
 
 .hero.is-transparent {
   background: #05060a;
-  transition: background 600ms ease; 
 }
 
 .hero__canvas {

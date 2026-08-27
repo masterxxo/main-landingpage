@@ -13,7 +13,8 @@ export default defineNuxtConfig({
   modules: ['@nuxt/fonts'],
   fonts: {
     families: [
-      { name: "IBM Plex Mono", provider: 'google' }
+      { name: "IBM Plex Mono", provider: 'google' },
+      { name: 'Cabinet Grotesk', provider: 'fontshare', weights: [400, 900], global: true },
     ]
   }
 })
