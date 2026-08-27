@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { gsap } from 'gsap'
+
 const props = defineProps({
   videoSrc: { type: String, required: true },
   preload: { type: Array, default: () => [] },
@@ -10,30 +12,21 @@ const props = defineProps({
 
 const { phase, progress, toIntro, toReveal, toReady } = useBoot()
 
-const videoEl = ref(null)
+const videoEl = ref<HTMLVideoElement | null>(null)
 const displayProgress = ref(0)
-const canSkip = ref(false)
 
-let skipTimer = 0
-let introTimer = 0
-let revealTimer = 0
-let rafId = 0
-const mountedAt = performance.now();
-
-function smoothProgress() {
-  const elapsed = performance.now() - mountedAt
-  const timeCap = elapsed / props.minBarDuration
-
-  const target = Math.min(progress.value, timeCap)
-
-  displayProgress.value += (target - displayProgress.value) * 0.08
-  rafId = requestAnimationFrame(smoothProgress)
-}
+let introCall: gsap.core.Tween | null = null
+let revealCall: gsap.core.Tween | null = null
+let holdCall: gsap.core.Tween | null = null
+let progressTween: gsap.core.Tween | null = null
+let isUnmounted = false
 
 async function startIntro() {
   toIntro()
 
   await nextTick()
+  if (isUnmounted) return
+
   const video = videoEl.value
   if (!video) return finish()
 
@@ -46,42 +39,58 @@ async function startIntro() {
 }
 
 function finish() {
+  introCall?.kill()
   toReveal()
 
-  if (revealTimer) clearTimeout(revealTimer)
-  revealTimer = window.setTimeout(() => {
-    const video = videoEl.value
-    if (video) video.pause()
+  revealCall?.kill()
+  revealCall = gsap.delayedCall(props.revealDuration / 1000, () => {
+    videoEl.value?.pause()
     toReady()
-  }, props.revealDuration)
+  })
 }
 
 onMounted(async () => {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const mountedAt = performance.now()
+  const progressCap = { value: 0 }
 
-  rafId = requestAnimationFrame(smoothProgress)
+  progressTween = gsap.to(progressCap, {
+    value: 1,
+    duration: props.minBarDuration / 1000,
+    ease: 'none',
+    onUpdate: () => {
+      displayProgress.value = Math.min(progress.value, progressCap.value)
+    },
+  })
 
   const assets: Array<string> = [props.videoSrc, ...props.preload] as Array<string>
-  await preloadAssets(assets, v => (progress.value = v))
+  await preloadAssets(assets, (value) => {
+    progress.value = value
+    displayProgress.value = Math.min(value, progressCap.value)
+  })
 
   const remaining = Math.max(0, props.minBarDuration - (performance.now() - mountedAt))
-  await new Promise(r => setTimeout(r, remaining + props.holdAfterLoad))
+  await new Promise<void>((resolve) => {
+    holdCall = gsap.delayedCall((remaining + props.holdAfterLoad) / 1000, resolve)
+  })
+
+  if (isUnmounted) return
 
   if (reduced) return finish()
 
   startIntro()
-  skipTimer = window.setTimeout(() => (canSkip.value = true), 1000)
 
   if (props.introDuration) {
-    introTimer = window.setTimeout(finish, props.introDuration)
+    introCall = gsap.delayedCall(props.introDuration / 1000, finish)
   }
 })
 
 onBeforeUnmount(() => {
-  clearTimeout(skipTimer)
-  clearTimeout(introTimer)
-  clearTimeout(revealTimer)
-  cancelAnimationFrame(rafId)
+  isUnmounted = true
+  progressTween?.kill()
+  holdCall?.kill()
+  introCall?.kill()
+  revealCall?.kill()
 })
 </script>
 
