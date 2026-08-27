@@ -1,25 +1,72 @@
 <script setup lang="ts">
-const props = defineProps({
-  text: { type: String, required: true },
-  wipeDuration: { type: Number, default: 240 },
-  scrambleDuration: { type: Number, default: 240 },
-  stagger: { type: Number, default: 18 },
-  scrambleFps: { type: Number, default: 30 },
-  charset: { type: String, default: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&$@' },
+interface ScrambleLinkProps {
+  text: string
+  wipeDuration?: number
+  scrambleDuration?: number
+  stagger?: number
+  scrambleFps?: number
+  charset?: string
+  fontSize?: number
+  fontFamily?: string
+  hover?: boolean
+  plain?: boolean
+  sequential?: boolean
+}
+
+const props = withDefaults(defineProps<ScrambleLinkProps>(), {
+  wipeDuration: 240,
+  scrambleDuration: 240,
+  stagger: 18,
+  scrambleFps: 30,
+  charset: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&$@',
+  fontSize: 14,
+  fontFamily: 'inherit',
+  hover: true,
+  plain: false,
+  sequential: false,
 })
 
 const displayed = ref(props.text)
 const isActive = ref(false)
+const animatedCharacterCount = computed<number>(
+  () => [...props.text].filter((char: string) => char !== ' ').length,
+)
 
 let rafId = 0
 let startedAt = 0
 let lastFrame = 0
 
-function randomChar() {
-  return props.charset[Math.floor(Math.random() * props.charset.length)]
+function randomChar(): string {
+  return props.charset[Math.floor(Math.random() * props.charset.length)] ?? ''
 }
 
-function tick() {
+function buildSequentialText(elapsed: number): { text: string, complete: boolean } {
+  const activeStep = Math.floor(elapsed / props.scrambleDuration)
+
+  if (activeStep >= animatedCharacterCount.value) {
+    return { text: props.text, complete: true }
+  }
+
+  let text = ''
+  let sequenceStep = 0
+
+  for (let index = 0; index < props.text.length; index++) {
+    const char = props.text[index] ?? ''
+
+    if (char === ' ') text += ' '
+    else {
+      if (sequenceStep < activeStep) text += char
+      else if (sequenceStep === activeStep) text += randomChar()
+      else text += ' '
+
+      sequenceStep += 1
+    }
+  }
+
+  return { text, complete: false }
+}
+
+function tick(): void {
   const now = performance.now()
   const elapsed = now - startedAt
 
@@ -27,6 +74,19 @@ function tick() {
 
   if (now - lastFrame >= frameInterval) {
     lastFrame = now
+
+    if (props.sequential) {
+      const frame = buildSequentialText(elapsed)
+      displayed.value = frame.text
+
+      if (frame.complete) {
+        rafId = 0
+        return
+      }
+
+      rafId = requestAnimationFrame(tick)
+      return
+    }
 
     let out = ''
     let allResolved = true
@@ -67,15 +127,25 @@ function tick() {
   rafId = requestAnimationFrame(tick)
 }
 
-function start() {
-  isActive.value = true
+function start(): void {
   if (rafId) cancelAnimationFrame(rafId)
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    isActive.value = true
+    displayed.value = props.text
+    rafId = 0
+    return
+  }
+
+  if (props.sequential) displayed.value = props.text.replace(/\S/g, ' ')
+
+  isActive.value = true
   startedAt = performance.now()
   lastFrame = 0
   rafId = requestAnimationFrame(tick)
 }
 
-function stop() {
+function stop(): void {
   isActive.value = false
   if (rafId) cancelAnimationFrame(rafId)
   rafId = 0
@@ -92,18 +162,27 @@ onBeforeUnmount(() => {
 <template>
   <span
     class="scramble"
-    :class="{ 'is-active': isActive }"
+    :class="{
+      'is-active': isActive,
+      'is-interactive': hover,
+      'is-sequential': sequential,
+    }"
     :style="{
       '--wipe-duration': `${wipeDuration}ms`,
+      '--font-size': `${fontSize}px`,
+      '--font-family': fontFamily,
     }"
-    @mouseenter="start"
-    @mouseleave="stop"
-    @focusin="start"
-    @focusout="stop"
+    @mouseenter="hover && start()"
+    @mouseleave="hover && stop()"
+    @focusin="hover && start()"
+    @focusout="hover && stop()"
   >
-    <span class="scramble__wipe" aria-hidden="true" />
+    <span v-if="!plain" class="scramble__wipe" aria-hidden="true" />
+    <span v-if="sequential" class="scramble__sizer" aria-hidden="true">
+      {{ text }}
+    </span>
     <span class="scramble__text">{{ displayed }}</span>
-    <span class="scramble__text scramble__text--dark" aria-hidden="true">
+    <span v-if="!plain" class="scramble__text scramble__text--dark" aria-hidden="true">
       {{ displayed }}
     </span>
   </span>
@@ -116,6 +195,19 @@ onBeforeUnmount(() => {
   padding: 0.25em 0.5em;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
+}
+
+.scramble:not(.is-interactive):not(.is-active) {
+  visibility: hidden;
+}
+
+.scramble.is-sequential {
+  display: inline-grid;
+}
+
+.scramble.is-sequential .scramble__sizer,
+.scramble.is-sequential .scramble__text {
+  grid-area: 1 / 1;
 }
 
 .scramble__wipe {
@@ -131,15 +223,24 @@ onBeforeUnmount(() => {
   transform: scaleX(1);
 }
 
+.scramble__text,
+.scramble__sizer {
+  display: block;
+  white-space: pre;
+  text-transform: uppercase;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  font-weight: 900;
+}
+
 .scramble__text {
   position: relative;
   z-index: 1;
-  display: block;
-  white-space: pre;
   color: #fff;
-  text-transform: uppercase;
-  font-size:14px;
-  font-weight: 900;
+}
+
+.scramble__sizer {
+  visibility: hidden;
 }
 
 .scramble__text--dark {
