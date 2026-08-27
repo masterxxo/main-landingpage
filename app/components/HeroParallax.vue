@@ -51,7 +51,6 @@ let resizeObserver: ResizeObserver | null = null
 let entranceTimeline: gsap.core.Timeline | null = null
 let pointerXTo: gsap.QuickToFunc | null = null
 let pointerYTo: gsap.QuickToFunc | null = null
-let isUnmounted = false
 
 const FLIP_DURATION = 1.6
 
@@ -126,12 +125,6 @@ onMounted(async () => {
     loadTexture(props.image),
     loadTexture(props.depthMap),
   ])
-
-  if (isUnmounted) {
-    texture.dispose()
-    depth.dispose()
-    return
-  }
 
   textures = [texture, depth]
 
@@ -226,7 +219,6 @@ watch(() => props.active, (isActive: boolean) => {
 })
 
 onBeforeUnmount(() => {
-  isUnmounted = true
   cancelAnimationFrame(rafId)
   entranceTimeline?.kill()
   pointerXTo?.tween.kill()

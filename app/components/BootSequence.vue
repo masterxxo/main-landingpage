@@ -19,14 +19,11 @@ let introCall: gsap.core.Tween | null = null
 let revealCall: gsap.core.Tween | null = null
 let holdCall: gsap.core.Tween | null = null
 let progressTween: gsap.core.Tween | null = null
-let isUnmounted = false
 
 async function startIntro() {
   toIntro()
 
   await nextTick()
-  if (isUnmounted) return
-
   const video = videoEl.value
   if (!video) return finish()
 
@@ -74,8 +71,6 @@ onMounted(async () => {
     holdCall = gsap.delayedCall((remaining + props.holdAfterLoad) / 1000, resolve)
   })
 
-  if (isUnmounted) return
-
   if (reduced) return finish()
 
   startIntro()
@@ -86,7 +81,6 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  isUnmounted = true
   progressTween?.kill()
   holdCall?.kill()
   introCall?.kill()
