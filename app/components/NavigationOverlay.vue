@@ -1,8 +1,8 @@
 <template>
   <Transition name="layout">
-    <div v-if="isHeroReady" class="fixed top-0 left-0 w-full h-[100svh] z-30 p-4">
+    <div v-if="isHeroReady" class="fixed top-0 left-0 w-full h-[100svh] z-30 p-4 pointer-events-none">
       <div class="border border-white/20 border-opacity-20 rounded-lg w-full h-full relative">
-        <div class="flex justify-between items-center w-full relative h-12.75 z-10 overflow-hidden rounded-t-lg">
+        <div class="flex justify-between items-center w-full relative h-12.75 z-10 overflow-hidden rounded-t-lg pointer-events-auto">
           <HeaderScrollBackground />
           <button class="relative h-full w-16.75 flex flex-col items-center justify-center gap-1 cursor-pointer border border-transparent rounded-tl-lg hover:border-white">
             <div class="w-6.5 h-px bg-white"></div>
@@ -33,7 +33,7 @@
           </div>
           <div class="absolute w-full bg-white/20 h-px bottom-0"></div>
         </div>
-        <div class="absolute top-0 left-0 w-16.75 h-full border-r border-white/20 flex flex-col items-center justify-between">
+        <div class="absolute top-0 left-0 w-16.75 h-full border-r border-white/20 flex flex-col items-center justify-between pointer-events-auto">
           <div>
             <!-- Placeholder -->
           </div>

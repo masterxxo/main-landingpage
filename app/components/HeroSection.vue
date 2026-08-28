@@ -56,6 +56,8 @@
         :path="SIDE_PLACEHOLDER_CLIP"
         label="IMAGE / 02"
         image="/img/hero_image_2.jpeg"
+        play-overlay
+        @open="openVideo"
       />
 
       <div v-show="labelsShown" ref="heroLabels" class="hero-labels">
@@ -79,10 +81,19 @@
         </div>
       </div>
     </div>
+
+    <VideoModal
+      :open="isVideoOpen"
+      :origin="videoOrigin"
+      video-id="KvMY1uzSC1E"
+      list-id="RDKvMY1uzSC1E"
+      @close="isVideoOpen = false"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
+import type { VideoModalOrigin } from '~/components/VideoModal.vue'
 import { SIDE_PLACEHOLDER_CLIP, SMALL_PLACEHOLDER_CLIP } from '~/constants/heroClipPaths'
 import { HERO_LABELS, HERO_TIMELINE } from '~/constants/heroLayout'
 
@@ -124,6 +135,16 @@ const {
 
 function handleHeroRevealed(): void {
   void playLabelReveal()
+}
+
+// --- Modal z wideo (rozchodzi się od bocznego kadru) ------------------
+const isVideoOpen = ref(false)
+const videoOrigin = ref<VideoModalOrigin | null>(null)
+
+function openVideo(rect: DOMRect): void {
+  const { top, left, width, height } = rect
+  videoOrigin.value = { top, left, width, height }
+  isVideoOpen.value = true
 }
 
 // --- Scrollowy timeline + tilt karty -----------------------------------
