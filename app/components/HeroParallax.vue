@@ -10,6 +10,7 @@ interface HeroParallaxProps {
   damping?: number
   drift?: number
   active?: boolean
+  fixedSize?: boolean
 }
 
 interface HeroUniforms extends Record<string, THREE.IUniform> {
@@ -31,6 +32,7 @@ const props = withDefaults(defineProps<HeroParallaxProps>(), {
   damping: 0.055,
   drift: 0.15,
   active: true,
+  fixedSize: false,
 })
 
 const emit = defineEmits<{
@@ -175,8 +177,18 @@ onMounted(async () => {
   resize()
   isReady.value = true
 
-  resizeObserver = new ResizeObserver(resize)
-  resizeObserver.observe(container.value)
+  // `fixedSize` = kontener jest skalowany transformami/animacją z zewnątrz
+  // (np. karta hero zjeżdżająca na scrollu). Nie chcemy wtedy przeliczać bufora
+  // WebGL na każdej klatce przez ResizeObserver — canvas renderujemy raz w pełnej
+  // rozdzielczości i skalujemy CSS-em (`.is-fixed-size`). Reagujemy tylko na resize
+  // OKNA, żeby po obrocie ekranu / zmianie rozmiaru okna obraz nie był rozciągnięty.
+  if (props.fixedSize) {
+    window.addEventListener('resize', resize, { passive: true })
+  }
+  else {
+    resizeObserver = new ResizeObserver(resize)
+    resizeObserver.observe(container.value)
+  }
 
   if (!reducedMotion) {
     const pointerDuration = Math.max(props.damping * 10, 0.1)
@@ -240,6 +252,7 @@ onBeforeUnmount(() => {
   pointerYTo?.tween.kill()
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerleave', onPointerLeave)
+  window.removeEventListener('resize', resize)
   if (resizeObserver) resizeObserver.disconnect()
 
   textures.forEach((texture: THREE.Texture) => texture.dispose())
@@ -254,7 +267,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="hero" :class="{ 'is-transparent': !isVideoVisible }">
-    <div ref="container" class="hero__canvas" :class="{ 'is-ready': isReady }" />
+    <div
+      ref="container"
+      class="hero__canvas"
+      :class="{
+        'is-ready': isReady,
+        'is-fixed-size': fixedSize,
+      }"
+    />
   </div>
 </template>
 
@@ -286,5 +306,16 @@ onBeforeUnmount(() => {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.hero__canvas.is-fixed-size :deep(canvas) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  transform: translate(-50%, -50%);
 }
 </style>
