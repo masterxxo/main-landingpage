@@ -3,6 +3,7 @@ export type BootPhase = 'loading' | 'intro' | 'reveal' | 'ready'
 export function useBoot() {
   const phase = useState<BootPhase>('boot-phase', () => 'loading')
   const progress = useState<number>('boot-progress', () => 0)
+  const isHeroReady = useState<boolean>('boot-hero-ready', () => false)
 
   const isRevealed = computed(
     () => phase.value === 'reveal' || phase.value === 'ready',
@@ -13,7 +14,10 @@ export function useBoot() {
   )
 
   function toIntro() {
-    if (phase.value === 'loading') phase.value = 'intro'
+    if (phase.value === 'loading') {
+      isHeroReady.value = false
+      phase.value = 'intro'
+    }
   }
 
   function toReveal() {
@@ -24,14 +28,23 @@ export function useBoot() {
     phase.value = 'ready'
   }
 
+  function toHeroReady() {
+    // Ustawiamy dopiero, gdy sekwencja bootowa faktycznie odsłoniła hero.
+    if (phase.value === 'reveal' || phase.value === 'ready') {
+      isHeroReady.value = true
+    }
+  }
+
   return {
     phase,
     progress,
+    isHeroReady,
     isRevealed,
     isVideoVisible,
     toIntro,
     toReveal,
     toReady,
+    toHeroReady,
   }
 }
 
