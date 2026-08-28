@@ -8,6 +8,8 @@ interface ScrambleLinkProps {
   charset?: string
   fontSize?: number
   fontFamily?: string
+  fontWeight?: number
+  textColor?: string
   hover?: boolean
   plain?: boolean
   sequential?: boolean
@@ -21,6 +23,8 @@ const props = withDefaults(defineProps<ScrambleLinkProps>(), {
   charset: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&$@',
   fontSize: 14,
   fontFamily: 'inherit',
+  fontWeight: 900,
+  textColor: '#fff',
   hover: true,
   plain: false,
   sequential: false,
@@ -171,6 +175,8 @@ onBeforeUnmount(() => {
       '--wipe-duration': `${wipeDuration}ms`,
       '--font-size': `${fontSize}px`,
       '--font-family': fontFamily,
+      '--font-weight': fontWeight,
+      '--text-color': textColor,
     }"
     @mouseenter="hover && start()"
     @mouseleave="hover && stop()"
@@ -230,13 +236,13 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
   font-family: var(--font-family);
   font-size: var(--font-size);
-  font-weight: 900;
+  font-weight: var(--font-weight);
 }
 
 .scramble__text {
   position: relative;
   z-index: 1;
-  color: #fff;
+  color: var(--text-color);
 }
 
 .scramble__sizer {

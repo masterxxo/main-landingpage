@@ -12,7 +12,22 @@
           <a href="#"><ScrambleLink text="Contact"/></a>
         </nav>
         <div>
-          <button class="contact-btn">CONTACT</button>
+          <button
+            class="contact-btn"
+            @mouseenter="contactScramble?.start()"
+            @mouseleave="contactScramble?.stop()"
+            @focus="contactScramble?.start()"
+            @blur="contactScramble?.stop()"
+          >
+            <ScrambleLink
+              ref="contactScramble"
+              class="contact-btn__label"
+              text="CONTACT"
+              plain
+              text-color="currentColor"
+              :font-weight="600"
+            />
+          </button>
         </div>
         <div class="absolute w-full bg-white/20 h-px bottom-0"></div>
       </div>
@@ -55,7 +70,10 @@
 </template>
 
 <script lang="ts" setup>
+import type { ScrambleTarget } from '~/composables/useScrambleReveal'
+
 const isAudioPlaying = ref(false);
+const contactScramble = ref<ScrambleTarget | null>(null)
 
 const toggleAudioLoop = () => {
   isAudioPlaying.value = !isAudioPlaying.value
