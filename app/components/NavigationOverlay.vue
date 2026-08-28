@@ -2,17 +2,18 @@
   <Transition name="layout">
     <div v-if="isHeroReady" class="fixed top-0 left-0 w-full h-[100svh] z-30 p-4">
       <div class="border border-white/20 border-opacity-20 rounded-lg w-full h-full relative">
-        <div class="flex justify-between items-center w-full relative h-12.75 z-10">
-          <button class="h-full w-16.75 flex flex-col items-center justify-center gap-1 cursor-pointer border border-transparent rounded-tl-lg hover:border-white">
+        <div class="flex justify-between items-center w-full relative h-12.75 z-10 overflow-hidden rounded-t-lg">
+          <HeaderScrollBackground />
+          <button class="relative h-full w-16.75 flex flex-col items-center justify-center gap-1 cursor-pointer border border-transparent rounded-tl-lg hover:border-white">
             <div class="w-6.5 h-px bg-white"></div>
             <div class="w-5.5 h-px bg-white"></div>
           </button>
-          <nav class="flex items-center gap-3">
+          <nav class="relative flex items-center gap-3">
             <a href="#"><ScrambleLink text="Apps" /></a>
             <a href="#"><ScrambleLink text="About" /></a>
             <a href="#"><ScrambleLink text="Contact"/></a>
           </nav>
-          <div>
+          <div class="relative">
             <button
               class="contact-btn"
               @mouseenter="contactScramble?.start()"
