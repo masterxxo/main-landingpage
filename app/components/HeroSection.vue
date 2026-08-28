@@ -54,6 +54,7 @@
         clip-id="side-placeholder-clip"
         :path="SIDE_PLACEHOLDER_CLIP"
         label="IMAGE / 02"
+        image="/img/hero_image_2.jpeg"
       />
 
       <div v-show="labelsShown" ref="heroLabels" class="hero-labels">

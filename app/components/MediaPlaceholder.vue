@@ -1,5 +1,11 @@
 <template>
   <div ref="root" class="media-placeholder">
+    <img
+      v-if="image"
+      class="media-placeholder__image"
+      :src="image"
+      alt=""
+    >
     <ClipBorder :path="path" />
     <span class="media-placeholder__label">{{ label }}</span>
   </div>
@@ -15,6 +21,7 @@ const props = defineProps<{
   /** Ścieżka `d` obrysu — ta sama geometria co clipPath. */
   path: string
   label: string
+  image?: string
 }>()
 
 // Trzymamy clip-path w arkuszu (przez v-bind), nie w inline :style — inaczej
@@ -42,5 +49,12 @@ defineExpose({ root })
   top: 18px;
   left: 18px;
   z-index: 1;
+}
+
+.media-placeholder__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 72% center;
 }
 </style>
