@@ -22,7 +22,7 @@
       <div ref="heroCard" class="hero-card">
         <div ref="heroTilt" class="hero-card__tilt">
           <HeroParallax
-            image="/img/hero_1.png"
+            image="/img/hero_main.png"
             depth-map="/img/hero-depth-12.png"
             :active="isRevealed"
             :strength="0"
@@ -46,6 +46,7 @@
         clip-id="small-placeholder-clip"
         :path="SMALL_PLACEHOLDER_CLIP"
         label="IMAGE / 01"
+        image="/img/hero_image_1.jpeg"
       />
 
       <MediaPlaceholder
