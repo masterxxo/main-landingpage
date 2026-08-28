@@ -90,20 +90,3 @@ export function useScrambleReveal(
 
   return target
 }
-
-/**
- * Wersja dla grupy napisów — każdy kolejny startuje z opóźnieniem.
- *
- *   const items = useScrambleRevealGroup(3, { gap: 180 })
- *   const setItemRef = (i, instance) => { items[i].value = instance }
- *   <ScrambleLink v-for="(_, i) in items" :key="i" :ref="el => setItemRef(i, el)" ... />
- */
-export function useScrambleRevealGroup(
-  count: number,
-  options: ScrambleRevealOptions & { gap?: number } = {},
-): Array<Ref<ScrambleTarget | null>> {
-  const { gap = 150, ...rest } = options
-
-  return Array.from({ length: count }, (_, i) =>
-    useScrambleReveal({ ...rest, delay: (rest.delay ?? 0) + i * gap }))
-}
