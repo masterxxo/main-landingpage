@@ -28,6 +28,7 @@ export const HERO_TIMELINE = {
   title: { start: 0.48, duration: 0.28 },
   smallPlaceholder: { start: 0.56, duration: 0.34 },
   sidePlaceholder: { start: 0.46, duration: 0.42 },
+  grid: { start: 0.62, duration: 0.28 },
   annotation: { start: 0.62, duration: 0.18 },
   /** Od tego progu postępu karta reaguje na tilt wskaźnikiem. */
   tiltActiveFrom: 0.72,

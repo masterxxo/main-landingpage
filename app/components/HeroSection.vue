@@ -19,6 +19,11 @@
     </svg>
 
     <div class="hero-stage">
+      <div ref="grid" class="hero-grid" aria-hidden="true">
+        <span class="hero-grid__vertical" />
+        <span class="hero-grid__horizontal" />
+      </div>
+
       <div ref="heroCard" class="hero-card">
         <div ref="heroTilt" class="hero-card__tilt">
           <HeroParallax
@@ -37,7 +42,7 @@
 
       <div ref="title" class="project-title">
         <span class="project-title__index">001</span>
-        <h1>LOREM IPSUM DOLOR<br>AMET CONSECTETUR.</h1>
+        <h1>STAY CURIOUS.<br>EVERYTHING ELSE FOLLOWS.</h1>
       </div>
 
       <MediaPlaceholder
@@ -58,6 +63,12 @@
         image="/img/hero_image_2.jpeg"
         play-overlay
         @open="openVideo"
+      />
+
+      <AnimatedWriterText
+        class="hero-statement"
+        :active="showEndContent"
+        text="Eight years of writing code taught me how software should work. Now AI writes it, and I do what I always wanted to do — build the software. Same curiosity, different job. Less typing, more thinking."
       />
 
       <div v-show="labelsShown" ref="heroLabels" class="hero-labels">
@@ -116,6 +127,7 @@ const heroCard = ref<HTMLElement | null>(null)
 const heroTilt = ref<HTMLElement | null>(null)
 const heroLabels = ref<HTMLElement | null>(null)
 const title = ref<HTMLElement | null>(null)
+const grid = ref<HTMLElement | null>(null)
 const heroAnnotation = ref<HTMLElement | null>(null)
 const heroClipPath = ref<SVGPathElement | null>(null)
 const heroBorder = ref<{ pathEl: SVGPathElement | null } | null>(null)
@@ -156,6 +168,7 @@ const scroll = useHeroScrollTimeline(
     borderPath: computed(() => heroBorder.value?.pathEl ?? null),
     labels: heroLabels,
     title,
+    grid,
     smallPlaceholder: computed(() => smallPlaceholder.value?.root ?? null),
     sidePlaceholder: computed(() => sidePlaceholder.value?.root ?? null),
     annotation: heroAnnotation,
@@ -166,7 +179,8 @@ const scroll = useHeroScrollTimeline(
   },
 )
 
-const { isStaticLayout, restingCardPath } = scroll
+const { isStaticLayout, hasReachedEnd, restingCardPath } = scroll
+const showEndContent = computed(() => isStaticLayout.value || hasReachedEnd.value)
 
 const tilt = useCardTilt({
   surface: heroCard,
@@ -196,11 +210,46 @@ const tilt = useCardTilt({
 }
 
 .hero-stage {
+  --hero-grid-x: 66.4%;
+  --hero-grid-y: 28%;
+  --hero-grid-color: rgb(255 255 255 / 28%);
+  --navigation-frame-inset: 16px;
+  --navigation-header-height: 51px;
+  --navigation-rail-width: 67px;
+
   position: sticky;
   top: 0;
   width: 100%;
   height: 100svh;
   overflow: hidden;
+}
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-grid__vertical,
+.hero-grid__horizontal {
+  position: absolute;
+  display: block;
+  background: var(--hero-grid-color);
+}
+
+.hero-grid__vertical {
+  top: calc(var(--navigation-frame-inset) + var(--navigation-header-height));
+  bottom: var(--navigation-frame-inset);
+  left: var(--hero-grid-x);
+  width: 1px;
+}
+
+.hero-grid__horizontal {
+  top: var(--hero-grid-y);
+  left: calc(var(--navigation-frame-inset) + var(--navigation-rail-width));
+  right: calc(100% - var(--hero-grid-x));
+  height: 1px;
 }
 
 .hero-card {
@@ -260,7 +309,7 @@ const tilt = useCardTilt({
 
 .project-title h1 {
   margin: 0;
-  font-size: clamp(42px, 4.4vw, 84px);
+  font-size: clamp(32px, calc(4.4vw - 10px), 74px);
   font-weight: 900;
   line-height: 0.88;
   letter-spacing: -0.055em;
@@ -279,6 +328,17 @@ const tilt = useCardTilt({
   right: 4.3%;
   width: min(29vw, 520px);
   height: 80%;
+}
+
+.hero-statement {
+  position: absolute;
+  bottom: 7%;
+  left: 7.2%;
+  z-index: 2;
+  width: min(27vw, 430px);
+  font-family: 'Cabinet Grotesk', sans-serif;
+  line-height: 1.35;
+  pointer-events: none;
 }
 
 .hero-labels {
@@ -336,7 +396,9 @@ const tilt = useCardTilt({
   }
 
   .project-title,
-  .hero-media {
+  .hero-media,
+  .hero-statement,
+  .hero-grid {
     display: none;
   }
 }

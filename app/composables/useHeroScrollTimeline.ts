@@ -11,6 +11,7 @@ export interface HeroScrollElements {
   borderPath: Ref<SVGPathElement | null>
   labels: Ref<HTMLElement | null>
   title: Ref<HTMLElement | null>
+  grid: Ref<HTMLElement | null>
   smallPlaceholder: Ref<HTMLElement | null>
   sidePlaceholder: Ref<HTMLElement | null>
   annotation: Ref<HTMLElement | null>
@@ -26,6 +27,8 @@ interface HeroScrollHooks {
 export interface HeroScrollTimeline {
   /** Reduced-motion na szerokim ekranie → renderujemy statyczny układ końcowy. */
   isStaticLayout: Ref<boolean>
+  /** Ustawiane po pierwszym osiągnięciu końca scrollowego timeline. */
+  hasReachedEnd: Ref<boolean>
   /** Kształt maski/obrysu karty w stanie spoczynku (zależny od trybu). */
   restingCardPath: ComputedRef<string>
   /** Postęp scrollowego timeline (0–1); 0 gdy timeline nie istnieje. */
@@ -43,6 +46,7 @@ export function useHeroScrollTimeline(
   hooks: HeroScrollHooks = {},
 ): HeroScrollTimeline {
   const isStaticLayout = ref(false)
+  const hasReachedEnd = ref(false)
   const restingCardPath = computed(
     () => (isStaticLayout.value ? HERO_CLIP_FINAL : HERO_CLIP_INITIAL),
   )
@@ -62,17 +66,17 @@ export function useHeroScrollTimeline(
 
   function build(): void {
     const { section, card, clipPath, borderPath, labels } = els
-    const { title, smallPlaceholder, sidePlaceholder, annotation } = els
+    const { title, grid, smallPlaceholder, sidePlaceholder, annotation } = els
 
     // Wszystkie ref-y to bezwarunkowe elementy template — guard chroni tylko
     // przed wywołaniem przed mountem.
     if (
       !section.value || !card.value || !clipPath.value || !borderPath.value
-      || !labels.value || !title.value || !smallPlaceholder.value
+      || !labels.value || !title.value || !grid.value || !smallPlaceholder.value
       || !sidePlaceholder.value || !annotation.value
     ) return
 
-    gsap.set([title.value, smallPlaceholder.value, sidePlaceholder.value, annotation.value], {
+    gsap.set([title.value, grid.value, smallPlaceholder.value, sidePlaceholder.value, annotation.value], {
       autoAlpha: 0,
     })
     clipPath.value.setAttribute('d', HERO_CLIP_INITIAL)
@@ -86,6 +90,9 @@ export function useHeroScrollTimeline(
         end: 'bottom bottom',
         scrub: 1,
         invalidateOnRefresh: true,
+        onUpdate: self => {
+          if (self.progress >= 0.995) hasReachedEnd.value = true
+        },
       },
     })
 
@@ -123,6 +130,10 @@ export function useHeroScrollTimeline(
         x: 0,
         duration: HERO_TIMELINE.sidePlaceholder.duration,
       }, HERO_TIMELINE.sidePlaceholder.start)
+      .to(grid.value, {
+        autoAlpha: 1,
+        duration: HERO_TIMELINE.grid.duration,
+      }, HERO_TIMELINE.grid.start)
       .to(annotation.value, {
         autoAlpha: 1,
         duration: HERO_TIMELINE.annotation.duration,
@@ -140,7 +151,7 @@ export function useHeroScrollTimeline(
     // Czyścimy tylko to, co timeline animuje. `clearProps: 'all'` zdejmowało też
     // niezwiązane style inline (np. clip-path zaślepek → prostokątne tło dookoła).
     for (const node of [
-      els.card, els.labels, els.title,
+      els.card, els.labels, els.title, els.grid,
       els.smallPlaceholder, els.sidePlaceholder, els.annotation,
     ]) {
       if (node.value) {
@@ -185,5 +196,5 @@ export function useHeroScrollTimeline(
     teardown()
   })
 
-  return { isStaticLayout, restingCardPath, getProgress }
+  return { isStaticLayout, hasReachedEnd, restingCardPath, getProgress }
 }
