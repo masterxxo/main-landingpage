@@ -1,25 +1,22 @@
-/** Od tej szerokości viewportu (px) gramy pełną, scrollowaną wersję ABOUT. */
-export const DESKTOP_MIN_WIDTH = 1024
-
 /**
- * Geometria karty ABOUT w stanie POCZĄTKOWYM — musi 1:1 odpowiadać końcowej
- * geometrii karty hero (`HERO_CARD` w `constants/heroLayout.ts`), żeby przejście
- * między sekcjami wyglądało jak jeden i ten sam kadr.
+ * Stałe fazy ABOUT — druga część scrollowego timeline sceny hero.
  *
- * UWAGA: te same liczby są zapisane w regułach `.about-card` / `.is-static`
- * w `AboutSection.vue` — przy zmianie aktualizuj oba miejsca.
+ * Kadr środkowy hero (ta sama instancja `<HeroParallax>`) po dojechaniu do małej
+ * karty NIE jest zastępowany nową sekcją. Na dalszy scroll odwracamy efekt:
+ * kadr rośnie z powrotem na pełny ekran, obraca się wokół pionowej osi i
+ * podmienia teksturę na `about_img.jpeg`, po czym zjeżdża i zmniejsza się do
+ * ~1/3 ekranu (finał ABOUT: pionowy „ROGSON" + blok opisu).
+ *
+ * Choreografię trzyma `useHeroScrollTimeline` — bity ABOUT są dopinane do tego
+ * samego GSAP timeline za bitami hero (patrz `ABOUT_PHASE`).
  */
-export const ABOUT_CARD_START = {
-  maxWidth: 480,
-  widthRatio: 0.27, // * window.innerWidth
-  height: 430,
-  leftRatio: 0.39, // * window.innerWidth
-  topRatio: 0.5, // * window.innerHeight
-} as const
 
 /**
- * Geometria karty ABOUT w stanie DOCELOWYM (rewers zmniejszony do ~1/3 ekranu,
- * wyśrodkowany). `left` / `top` liczymy w runtime z faktycznego rozmiaru karty.
+ * Geometria kadru w stanie DOCELOWYM fazy ABOUT (rewers zmniejszony do ~1/3
+ * ekranu, wyśrodkowany). `left` / `top` liczymy w runtime z faktycznego rozmiaru.
+ *
+ * UWAGA: te same liczby są w regułach `.hero-card` w wariantach
+ * reduced-motion / `max-width: 1023px` w `HeroSection.vue` — aktualizuj oba miejsca.
  */
 export const ABOUT_CARD_FINAL = {
   maxWidth: 620,
@@ -28,30 +25,30 @@ export const ABOUT_CARD_FINAL = {
 } as const
 
 /**
- * Choreografia scrollowego timeline (jednostki postępu ScrollTriggera 0–1):
- * `start` = kiedy beat wchodzi, `duration` = jak długo trwa na osi postępu.
+ * Choreografia bitów ABOUT w jednostkach postępu (0–1), liczonych OD KOŃCA
+ * bitów hero (`useHeroScrollTimeline` dodaje offset `HERO_END`). `start` = kiedy
+ * bit wchodzi, `duration` = jak długo trwa na osi postępu.
  *
- * FAZA 1 — przykrycie hero:
- *   expand — kadr DOM rośnie do pełnego ekranu, a JEDNOCZEŚNIE shader kadru
- *            (ten sam co środkowa karta hero) odgrywa wejście hero WSTECZ:
- *            `reveal` 1 → 0, czyli „zoom out” + obrót wokół pionowej osi aż do
- *            ustawienia bokiem. W połowie tej drogi jest styk faz.
- *   flip   — `reveal` 0 → 1 z drugą teksturą (`about_img.jpeg`): kadr wraca
- *            frontem i dojeżdża do coveru — rewers na całą stronę.
+ *   regrow — kadr DOM rośnie z małej karty z powrotem na pełny ekran, WCIĄŻ
+ *            awersem (`cardReveal` = 1): obraz „rozchodzi się" i sam przykrywa
+ *            tytuł oraz kadry hero. Pod spodem nie ma jeszcze czerni.
+ *   flip   — dopiero na pełnym ekranie kadr obraca się awers→rewers:
+ *            `cardReveal` 1→0 (bokiem), w połowie podmiana tekstury na
+ *            `about_img.jpeg`, `cardReveal` 0→1 (z powrotem frontem). Czarne tło
+ *            włącza się na starcie tego bitu — kadr zasłania cały ekran, więc
+ *            jest to niewidoczne.
  *   hold   — rewers trzymany na całą stronę.
+ *   shrink — rewers zjeżdża i zmniejsza się do ~1/3 ekranu; dopiero teraz wokół
+ *            kadru odsłania się czerń (puste miejsca).
+ *   copyIn — wjazd pionowego „ROGSON" i bloku opisu po prawej.
  *
- * FAZA 2 — zjazd i pomniejszenie:
- *   shrink — rewers zjeżdża w dół i zmniejsza się do ~1/3 szerokości ekranu.
- *   copyIn — wjazd pionowego „ROGSON" i miejsca na opis po prawej.
- *
- * Podmiana tekstury awers→rewers następuje na styku `expand`/`flip` (kadr jest
- * wtedy ustawiony bokiem, `reveal` ≈ 0). Kształt ramki (`clip-path` + obrys) NIE
- * jest morfowany — kadr cały czas ma kształt ramki hero (`HERO_CLIP_FINAL`).
+ * Kształt ramki (`clip-path` + obrys) NIE jest morfowany — kadr cały czas ma
+ * kształt karty hero w spoczynku (`HERO_CLIP_FINAL`).
  */
-export const ABOUT_TIMELINE = {
-  expand: { start: 0, duration: 0.3 },
-  flip: { start: 0.3, duration: 0.16 },
-  hold: { start: 0.46, duration: 0.1 },
-  shrink: { start: 0.56, duration: 0.34 },
-  copyIn: { start: 0.74, duration: 0.26 },
+export const ABOUT_PHASE = {
+  regrow: { start: 0, duration: 0.3 },
+  flip: { start: 0.3, duration: 0.26 },
+  hold: { start: 0.56, duration: 0.08 },
+  shrink: { start: 0.64, duration: 0.3 },
+  copyIn: { start: 0.8, duration: 0.24 },
 } as const

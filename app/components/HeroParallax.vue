@@ -29,6 +29,18 @@ interface HeroParallaxProps {
   secondDepthMap?: string
   /** `true` → renderuj `secondImage` zamiast `image` (podmiana uniformu tekstury). */
   showSecond?: boolean
+  /**
+   * Zoom kadrowania `secondImage`: mnożnik „cover scale" (jak stałe 0.82 dla
+   * `image`). 1 = pełny „cover" bez dodatkowego przycięcia (cała twarz mieści
+   * się w ramce), <1 = mocniejszy zoom, >1 = oddalenie (ryzyko smug na
+   * krawędziach). Domyślnie 1.
+   */
+  secondZoom?: number
+  /**
+   * Pionowe przesunięcie kadru `secondImage` w jednostkach UV (0–1). Dodatnie =
+   * pokazuje wyżej położony fragment zdjęcia (więcej głowy). Domyślnie 0.
+   */
+  secondFocusY?: number
 }
 
 interface HeroUniforms extends Record<string, THREE.IUniform> {
@@ -40,6 +52,7 @@ interface HeroUniforms extends Record<string, THREE.IUniform> {
   uScale: THREE.IUniform<number>
   uPointer: THREE.IUniform<THREE.Vector2>
   uCoverScale: THREE.IUniform<THREE.Vector2>
+  uCoverOffset: THREE.IUniform<THREE.Vector2>
   uStrength: THREE.IUniform<number>
   uTime: THREE.IUniform<number>
   uDrift: THREE.IUniform<number>
@@ -51,7 +64,12 @@ const props = withDefaults(defineProps<HeroParallaxProps>(), {
   drift: 0.15,
   active: true,
   fixedSize: false,
+  secondZoom: 1,
+  secondFocusY: 0,
 })
+
+/** Zoom kadrowania „cover" dla `image` (kadr hero — lekkie przybliżenie). */
+const COVER_ZOOM = 0.82
 
 const emit = defineEmits<{
   revealed: []
@@ -72,6 +90,9 @@ let textures: THREE.Texture[] = []
 let secondTexture: THREE.Texture | null = null
 let rafId = 0
 let resizeObserver: ResizeObserver | null = null
+// Lekki obserwator (tylko `updateCoverScale`, bez `setSize`) — pilnuje kadrowania
+// rewersu, gdy kadr zmienia rozmiar animacją (zjazd ABOUT do ~1/3).
+let coverObserver: ResizeObserver | null = null
 let entranceTimeline: gsap.core.Timeline | null = null
 let pointerXTo: gsap.QuickToFunc | null = null
 let pointerYTo: gsap.QuickToFunc | null = null
@@ -124,7 +145,28 @@ function updateCoverScale(): void {
     scale.set(boxRatio / imageRatio, 1)
   }
 
-  scale.multiplyScalar(0.82)
+  // `secondImage` ma własny zoom/ognisko, żeby twarz mieściła się w wąskiej
+  // ramce ABOUT; `image` (kadr hero) zostaje przy stałym lekkim przybliżeniu.
+  const showingSecond = secondTexture !== null && texture === secondTexture
+  scale.multiplyScalar(showingSecond ? props.secondZoom : COVER_ZOOM)
+  uniforms.uCoverOffset.value.set(0, showingSecond ? props.secondFocusY : 0)
+
+  // Tryb `is-fixed-size`: bufor WebGL renderujemy RAZ w proporcjach pełnego
+  // ekranu i skalujemy CSS-em jak `object-fit: cover`. W wąskiej ramce ABOUT
+  // canvas wystaje poza kadr — bez kompensacji widać tylko środkowy pasek
+  // zdjęcia. Kompensujemy to w UV (bufora NIE ruszamy — żadnego `setSize` na
+  // klatce, więc nie klatkuje). Dotyczy tylko rewersu; kadr hero bez zmian.
+  if (showingSecond && props.fixedSize && renderer) {
+    const bufW = renderer.domElement.width
+    const bufH = renderer.domElement.height
+    const cw = container.value.clientWidth
+    const ch = container.value.clientHeight
+    if (bufW > 0 && bufH > 0 && cw > 0 && ch > 0) {
+      const bufAspect = bufW / bufH
+      scale.x *= Math.max(1, (ch * bufAspect) / cw)
+      scale.y *= Math.max(1, cw / bufAspect / ch)
+    }
+  }
 }
 
 function resize(): void {
@@ -189,6 +231,7 @@ onMounted(async () => {
     uScale: { value: startFlat ? 1 : 0.55 },
     uPointer: { value: new THREE.Vector2(0, 0) },
     uCoverScale: { value: new THREE.Vector2(1, 1) },
+    uCoverOffset: { value: new THREE.Vector2(0, 0) },
     uStrength: { value: startFlat ? props.strength : 0 },
     uTime: { value: 0 },
     uDrift: { value: reducedMotion ? 0 : props.drift },
@@ -219,6 +262,19 @@ onMounted(async () => {
   // OKNA, żeby po obrocie ekranu / zmianie rozmiaru okna obraz nie był rozciągnięty.
   if (props.fixedSize) {
     window.addEventListener('resize', resize, { passive: true })
+    // Wyjątek: gdy pokazujemy rewers (`secondImage`), kadrowanie „cover" musi
+    // nadążać za kształtem kurczącej się ramki ABOUT. To SAM zapis uniformu
+    // (`updateCoverScale` — bez `setSize`), więc nie klatkuje. Dla `image`
+    // (kadr hero) obserwator nic nie robi.
+    let lastCoverW = 0
+    coverObserver = new ResizeObserver((entries) => {
+      if (!uniforms || !secondTexture || uniforms.uTexture.value !== secondTexture) return
+      const w = Math.round(entries[0]?.contentRect.width ?? 0)
+      if (!w || w === lastCoverW) return
+      lastCoverW = w
+      updateCoverScale()
+    })
+    coverObserver.observe(container.value)
   }
   else {
     resizeObserver = new ResizeObserver(resize)
@@ -319,6 +375,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('pointerleave', onPointerLeave)
   window.removeEventListener('resize', resize)
   if (resizeObserver) resizeObserver.disconnect()
+  if (coverObserver) coverObserver.disconnect()
 
   textures.forEach((texture: THREE.Texture) => texture.dispose())
   geometry?.dispose()
