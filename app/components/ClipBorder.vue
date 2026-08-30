@@ -1,5 +1,6 @@
 <template>
   <svg
+    ref="root"
     class="clip-border"
     viewBox="0 0 1 1"
     preserveAspectRatio="none"
@@ -15,9 +16,11 @@
 // Kolor i grubość nadpiszesz zmiennymi `--clip-border-stroke` / `--clip-border-width`.
 defineProps<{ path: string }>()
 
-// Wystawiamy element <path>, żeby rodzic mógł go animować (GSAP `attr: { d }`).
+// Wystawiamy <path> (GSAP `attr: { d }`) oraz korzeń <svg> (np. wygaszanie
+// całego obrysu przez `autoAlpha`, gdy kadr rośnie na pełny ekran).
 const pathEl = ref<SVGPathElement | null>(null)
-defineExpose({ pathEl })
+const root = ref<SVGSVGElement | null>(null)
+defineExpose({ pathEl, root })
 </script>
 
 <style scoped>

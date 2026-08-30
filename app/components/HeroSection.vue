@@ -29,7 +29,12 @@
           <HeroParallax
             image="/img/hero_main.png"
             depth-map="/img/hero-depth-12.png"
+            second-image="/img/about_img.jpeg"
             :active="isRevealed"
+            :reveal="cardReveal"
+            :show-second="cardShowSecond"
+            :second-zoom="0.93"
+            :second-focus-y="0.12"
             :strength="0"
             :drift="0"
             fixed-size
@@ -91,6 +96,19 @@
           />
         </div>
       </div>
+
+      <!-- Faza ABOUT (druga część scrollowego timeline). Czarne dno wchodzi,
+           gdy kadr trzyma pełny ekran; „ROGSON" i opis wjeżdżają, gdy kadr
+           zmniejszy się do ~1/3. -->
+      <div ref="aboutBg" class="about-bg" aria-hidden="true" />
+      <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
+      <div ref="aboutCopy" class="about-copy">
+        <span class="about-copy__index">002</span>
+        <h2 class="about-copy__title">ABOUT</h2>
+        <p class="about-copy__text">
+          Placeholder — krótki opis o Rogson. Treść dopasujemy później.
+        </p>
+      </div>
     </div>
 
     <VideoModal
@@ -130,9 +148,17 @@ const title = ref<HTMLElement | null>(null)
 const grid = ref<HTMLElement | null>(null)
 const heroAnnotation = ref<HTMLElement | null>(null)
 const heroClipPath = ref<SVGPathElement | null>(null)
-const heroBorder = ref<{ pathEl: SVGPathElement | null } | null>(null)
+const heroBorder = ref<{ pathEl: SVGPathElement | null, root: SVGSVGElement | null } | null>(null)
 const smallPlaceholder = ref<{ root: HTMLElement | null } | null>(null)
 const sidePlaceholder = ref<{ root: HTMLElement | null } | null>(null)
+const aboutBg = ref<HTMLElement | null>(null)
+const aboutSideLabel = ref<HTMLElement | null>(null)
+const aboutCopy = ref<HTMLElement | null>(null)
+
+// Sterowanie shaderem współdzielonego kadru w fazie ABOUT: scrub „wejścia"
+// (`HeroParallax` `:reveal`) oraz podmiana tekstury na rewers.
+const cardReveal = ref<number | undefined>(undefined)
+const cardShowSecond = ref(false)
 
 // --- Sekwencyjne odsłanianie labeli -------------------------------------
 const {
@@ -166,12 +192,18 @@ const scroll = useHeroScrollTimeline(
     card: heroCard,
     clipPath: heroClipPath,
     borderPath: computed(() => heroBorder.value?.pathEl ?? null),
+    border: computed(() => heroBorder.value?.root ?? null),
     labels: heroLabels,
     title,
     grid,
     smallPlaceholder: computed(() => smallPlaceholder.value?.root ?? null),
     sidePlaceholder: computed(() => sidePlaceholder.value?.root ?? null),
     annotation: heroAnnotation,
+    aboutBg,
+    aboutSideLabel,
+    aboutCopy,
+    cardReveal,
+    cardShowSecond,
   },
   {
     onActivate: () => tilt.enable(),
@@ -179,8 +211,8 @@ const scroll = useHeroScrollTimeline(
   },
 )
 
-const { isStaticLayout, hasReachedEnd, restingCardPath } = scroll
-const showEndContent = computed(() => isStaticLayout.value || hasReachedEnd.value)
+const { isStaticLayout, heroSettled, restingCardPath } = scroll
+const showEndContent = computed(() => isStaticLayout.value || heroSettled.value)
 
 const tilt = useCardTilt({
   surface: heroCard,
@@ -193,7 +225,9 @@ const tilt = useCardTilt({
 .hero-scroll {
   position: relative;
   width: 100%;
-  height: 280svh; /* długość drogi scrolla dla scrubowanego timeline */
+  /* Droga scrolla dla całego scrubowanego timeline: bity hero + faza ABOUT
+     (odwrócenie zjazdu kadru, obrót, zjazd do ~1/3). */
+  height: 560svh;
   background: #05060a;
   transition: background-color 600ms ease;
 }
@@ -217,11 +251,81 @@ const tilt = useCardTilt({
   --navigation-header-height: 51px;
   --navigation-rail-width: 67px;
 
+  /* Faza ABOUT — docelowa geometria kadru (musi odpowiadać ABOUT_CARD_FINAL). */
+  --about-final-width: min(33.333vw, 620px);
+  --about-final-left: calc((100vw - var(--about-final-width)) / 2);
+  --about-sidelabel-gap: clamp(16px, 3vw, 56px);
+  --about-copy-gap: clamp(24px, 4vw, 72px);
+
   position: sticky;
   top: 0;
   width: 100%;
   height: 100svh;
   overflow: hidden;
+}
+
+/* Czarne „dno" fazy ABOUT. Kryciem steruje timeline (`useHeroScrollTimeline`):
+   niewidoczne dopóki kadr nie zakryje ekranu (włączane na `flip.start`), a wokół
+   zmniejszonego kadru odsłaniane dopiero przy `shrink`. Nad treścią hero,
+   pod kadrem (`.hero-card` ma z-index 3). */
+.about-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #000;
+  pointer-events: none;
+}
+
+.about-sidelabel {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--about-final-left) - var(--about-sidelabel-gap));
+  z-index: 4;
+  transform: translate(-100%, -50%) rotate(180deg);
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+  color: #fff;
+  font-family: 'Cabinet Grotesk', sans-serif;
+  font-size: clamp(88px, 9.5vw, 160px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.about-copy {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--about-final-left) + var(--about-final-width) + var(--about-copy-gap));
+  z-index: 4;
+  width: min(26vw, 380px);
+  transform: translateY(-50%);
+  color: rgb(255 255 255 / 72%);
+  font-family: 'Cabinet Grotesk', sans-serif;
+}
+
+.about-copy__index {
+  display: block;
+  margin-bottom: 14px;
+  color: rgb(255 255 255 / 55%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+
+.about-copy__title {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: clamp(24px, 2.4vw, 40px);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+}
+
+.about-copy__text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .hero-grid {
@@ -389,7 +493,8 @@ const tilt = useCardTilt({
   line-height: 1;
 }
 
-/* Wąski ekran: układ desktopowy się nie mieści — pokazujemy sam kadr + labele. */
+/* Wąski ekran: układ desktopowy się nie mieści — pokazujemy sam kadr + labele.
+   Faza ABOUT to efekt czysto scrollowy — bez scrubu nie pokazujemy jej elementów. */
 @media (max-width: 1023px) {
   .hero-scroll {
     height: 100svh;
@@ -398,14 +503,18 @@ const tilt = useCardTilt({
   .project-title,
   .hero-media,
   .hero-statement,
-  .hero-grid {
+  .hero-grid,
+  .about-bg,
+  .about-sidelabel,
+  .about-copy {
     display: none;
   }
 }
 
 /* Reduced-motion (≥1024px): renderujemy KOŃCOWY układ statycznie — bez długiego
    scrolla i animacji, ale z pełną treścią (tytuł + kadry pozostają widoczne).
-   Geometria karty musi odpowiadać stałym HERO_CARD w constants/heroLayout.ts. */
+   Geometria karty musi odpowiadać stałym HERO_CARD w constants/heroLayout.ts.
+   Faza ABOUT (scroll-only) jest wyłączona. */
 @media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
   .hero-scroll {
     height: 100svh;
@@ -421,6 +530,12 @@ const tilt = useCardTilt({
     width: min(27vw, 480px);
     height: 430px;
     will-change: auto;
+  }
+
+  .about-bg,
+  .about-sidelabel,
+  .about-copy {
+    display: none;
   }
 }
 </style>

@@ -11,6 +11,36 @@ interface HeroParallaxProps {
   drift?: number
   active?: boolean
   fixedSize?: boolean
+  /**
+   * Pomija animację wejścia (flip / dojazd skali) i renderuje od razu stan
+   * końcowy — do reużycia tego samego kadru w innej sekcji bez powtórnego
+   * „odsłaniania".
+   */
+  skipIntro?: boolean
+  /**
+   * Zewnętrzny scrub animacji wejścia w zakresie 0–1 (0 = odsunięty + obrócony
+   * „zoom out", 1 = wylądowany kadr hero). Gdy podane, komponent nie odtwarza
+   * wejścia sam — postęp ustawia rodzic (np. scroll ABOUT).
+   */
+  reveal?: number
+  /** Druga tekstura (rewers) wczytywana z góry; podmieniana przez `showSecond`. */
+  secondImage?: string
+  /** Depth map dla `secondImage` (domyślnie ta sama co `depthMap`). */
+  secondDepthMap?: string
+  /** `true` → renderuj `secondImage` zamiast `image` (podmiana uniformu tekstury). */
+  showSecond?: boolean
+  /**
+   * Zoom kadrowania `secondImage`: mnożnik „cover scale" (jak stałe 0.82 dla
+   * `image`). 1 = pełny „cover" bez dodatkowego przycięcia (cała twarz mieści
+   * się w ramce), <1 = mocniejszy zoom, >1 = oddalenie (ryzyko smug na
+   * krawędziach). Domyślnie 1.
+   */
+  secondZoom?: number
+  /**
+   * Pionowe przesunięcie kadru `secondImage` w jednostkach UV (0–1). Dodatnie =
+   * pokazuje wyżej położony fragment zdjęcia (więcej głowy). Domyślnie 0.
+   */
+  secondFocusY?: number
 }
 
 interface HeroUniforms extends Record<string, THREE.IUniform> {
@@ -22,6 +52,7 @@ interface HeroUniforms extends Record<string, THREE.IUniform> {
   uScale: THREE.IUniform<number>
   uPointer: THREE.IUniform<THREE.Vector2>
   uCoverScale: THREE.IUniform<THREE.Vector2>
+  uCoverOffset: THREE.IUniform<THREE.Vector2>
   uStrength: THREE.IUniform<number>
   uTime: THREE.IUniform<number>
   uDrift: THREE.IUniform<number>
@@ -33,7 +64,12 @@ const props = withDefaults(defineProps<HeroParallaxProps>(), {
   drift: 0.15,
   active: true,
   fixedSize: false,
+  secondZoom: 1,
+  secondFocusY: 0,
 })
+
+/** Zoom kadrowania „cover" dla `image` (kadr hero — lekkie przybliżenie). */
+const COVER_ZOOM = 0.82
 
 const emit = defineEmits<{
   revealed: []
@@ -51,12 +87,18 @@ let material: THREE.ShaderMaterial | null = null
 let geometry: THREE.PlaneGeometry | null = null
 let uniforms: HeroUniforms | null = null
 let textures: THREE.Texture[] = []
+let secondTexture: THREE.Texture | null = null
 let rafId = 0
 let resizeObserver: ResizeObserver | null = null
+// Lekki obserwator (tylko `updateCoverScale`, bez `setSize`) — pilnuje kadrowania
+// rewersu, gdy kadr zmienia rozmiar animacją (zjazd ABOUT do ~1/3).
+let coverObserver: ResizeObserver | null = null
 let entranceTimeline: gsap.core.Timeline | null = null
 let pointerXTo: gsap.QuickToFunc | null = null
 let pointerYTo: gsap.QuickToFunc | null = null
 let reducedMotion = false
+let noIntro = false
+let externalReveal = false
 let hasRevealed = false
 
 const FLIP_DURATION = 1.6
@@ -103,7 +145,28 @@ function updateCoverScale(): void {
     scale.set(boxRatio / imageRatio, 1)
   }
 
-  scale.multiplyScalar(0.82)
+  // `secondImage` ma własny zoom/ognisko, żeby twarz mieściła się w wąskiej
+  // ramce ABOUT; `image` (kadr hero) zostaje przy stałym lekkim przybliżeniu.
+  const showingSecond = secondTexture !== null && texture === secondTexture
+  scale.multiplyScalar(showingSecond ? props.secondZoom : COVER_ZOOM)
+  uniforms.uCoverOffset.value.set(0, showingSecond ? props.secondFocusY : 0)
+
+  // Tryb `is-fixed-size`: bufor WebGL renderujemy RAZ w proporcjach pełnego
+  // ekranu i skalujemy CSS-em jak `object-fit: cover`. W wąskiej ramce ABOUT
+  // canvas wystaje poza kadr — bez kompensacji widać tylko środkowy pasek
+  // zdjęcia. Kompensujemy to w UV (bufora NIE ruszamy — żadnego `setSize` na
+  // klatce, więc nie klatkuje). Dotyczy tylko rewersu; kadr hero bez zmian.
+  if (showingSecond && props.fixedSize && renderer) {
+    const bufW = renderer.domElement.width
+    const bufH = renderer.domElement.height
+    const cw = container.value.clientWidth
+    const ch = container.value.clientHeight
+    if (bufW > 0 && bufH > 0 && cw > 0 && ch > 0) {
+      const bufAspect = bufW / bufH
+      scale.x *= Math.max(1, (ch * bufAspect) / cw)
+      scale.y *= Math.max(1, cw / bufAspect / ch)
+    }
+  }
 }
 
 function resize(): void {
@@ -133,6 +196,13 @@ onMounted(async () => {
   if (!container.value) return
 
   reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  noIntro = reducedMotion || props.skipIntro === true
+  externalReveal = props.reveal !== undefined
+
+  // `startFlat` = brak animacji wejścia i brak zewnętrznego scrubu → od razu
+  // wylądowany kadr. Przy `reveal` startujemy od stanu „zoom out + obrót"
+  // i to rodzic decyduje o postępie.
+  const startFlat = noIntro && !externalReveal
 
   const [texture, depth]: [THREE.Texture, THREE.Texture] = await Promise.all([
     loadTexture(props.image),
@@ -141,6 +211,13 @@ onMounted(async () => {
 
   textures = [texture, depth]
 
+  if (props.secondImage) {
+    secondTexture = await loadTexture(props.secondImage)
+    secondTexture.colorSpace = THREE.SRGBColorSpace
+    textures.push(secondTexture)
+    if (props.secondDepthMap) textures.push(await loadTexture(props.secondDepthMap))
+  }
+
   scene = new THREE.Scene()
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
   geometry = new THREE.PlaneGeometry(2.4, 2.4)
@@ -148,13 +225,14 @@ onMounted(async () => {
   uniforms = {
     uTexture: { value: texture },
     uDepth: { value: depth },
-    uFlip: { value: reducedMotion ? 1 : 0.02 },
+    uFlip: { value: startFlat ? 1 : 0.02 },
     uPerspective: { value: 0.7 },
     uApproach: { value: 1.8 },
-    uScale: { value: reducedMotion ? 1 : 0.55 },
+    uScale: { value: startFlat ? 1 : 0.55 },
     uPointer: { value: new THREE.Vector2(0, 0) },
     uCoverScale: { value: new THREE.Vector2(1, 1) },
-    uStrength: { value: 0 },
+    uCoverOffset: { value: new THREE.Vector2(0, 0) },
+    uStrength: { value: startFlat ? props.strength : 0 },
     uTime: { value: 0 },
     uDrift: { value: reducedMotion ? 0 : props.drift },
   }
@@ -184,13 +262,59 @@ onMounted(async () => {
   // OKNA, żeby po obrocie ekranu / zmianie rozmiaru okna obraz nie był rozciągnięty.
   if (props.fixedSize) {
     window.addEventListener('resize', resize, { passive: true })
+    // Wyjątek: gdy pokazujemy rewers (`secondImage`), kadrowanie „cover" musi
+    // nadążać za kształtem kurczącej się ramki ABOUT. To SAM zapis uniformu
+    // (`updateCoverScale` — bez `setSize`), więc nie klatkuje. Dla `image`
+    // (kadr hero) obserwator nic nie robi.
+    let lastCoverW = 0
+    coverObserver = new ResizeObserver((entries) => {
+      if (!uniforms || !secondTexture || uniforms.uTexture.value !== secondTexture) return
+      const w = Math.round(entries[0]?.contentRect.width ?? 0)
+      if (!w || w === lastCoverW) return
+      lastCoverW = w
+      updateCoverScale()
+    })
+    coverObserver.observe(container.value)
   }
   else {
     resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(container.value)
   }
 
-  if (!reducedMotion) {
+  // Podmiana na rewers już na starcie (statyczny/mobilny wariant ABOUT).
+  if (props.showSecond && secondTexture) {
+    uniforms.uTexture.value = secondTexture
+    updateCoverScale()
+  }
+
+  // Animacja wejścia (zoom + flip) — budujemy ZAWSZE, żeby dało się ją
+  // scrubować z zewnątrz przez `reveal`.
+  entranceTimeline = gsap.timeline({ paused: true, onComplete: emitRevealed })
+    .to(uniforms.uFlip, {
+      value: 1,
+      duration: FLIP_DURATION,
+      ease: 'power2.inOut',
+    }, 0)
+    .to(uniforms.uScale, {
+      value: 1,
+      duration: FLIP_DURATION,
+      ease: 'power2.inOut',
+    }, 0)
+    .to(uniforms.uStrength, {
+      value: props.strength,
+      duration: FLIP_DURATION,
+      ease: 'power2.inOut',
+    }, 0)
+
+  if (externalReveal) {
+    entranceTimeline.progress(gsap.utils.clamp(0, 1, props.reveal as number))
+    if ((props.reveal as number) >= 1) emitRevealed()
+  }
+  else if (noIntro) {
+    entranceTimeline.progress(1)
+    if (props.active) emitRevealed()
+  }
+  else {
     const pointerDuration = Math.max(props.damping * 10, 0.1)
     pointerXTo = gsap.quickTo(uniforms.uPointer.value, 'x', {
       duration: pointerDuration,
@@ -201,30 +325,10 @@ onMounted(async () => {
       ease: 'power2.out',
     })
 
-    entranceTimeline = gsap.timeline({ paused: true, onComplete: emitRevealed })
-      .to(uniforms.uFlip, {
-        value: 1,
-        duration: FLIP_DURATION,
-        ease: 'power2.inOut',
-      }, 0)
-      .to(uniforms.uScale, {
-        value: 1,
-        duration: FLIP_DURATION,
-        ease: 'power2.inOut',
-      }, 0)
-      .to(uniforms.uStrength, {
-        value: props.strength,
-        duration: FLIP_DURATION,
-        ease: 'power2.inOut',
-      }, 0)
-
     if (props.active) entranceTimeline.play()
 
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerleave', onPointerLeave, { passive: true })
-  }
-  else if (props.active) {
-    emitRevealed()
   }
 
   const clock = new THREE.Timer()
@@ -240,9 +344,26 @@ onMounted(async () => {
 })
 
 watch(() => props.active, (isActive: boolean) => {
-  if (isActive && reducedMotion && isReady.value) emitRevealed()
+  if (externalReveal) return
+  if (isActive && noIntro && isReady.value) emitRevealed()
   else if (isActive) entranceTimeline?.play()
   else entranceTimeline?.pause()
+})
+
+// Zewnętrzny scrub animacji wejścia (0 = zoom out + obrót, 1 = kadr hero).
+watch(() => props.reveal, (value) => {
+  if (value == null || !entranceTimeline) return
+  entranceTimeline.progress(gsap.utils.clamp(0, 1, value))
+  if (value >= 1) emitRevealed()
+})
+
+// Podmiana widocznej tekstury (awers ↔ rewers).
+watch(() => props.showSecond, (show) => {
+  if (!uniforms) return
+  const next = show ? secondTexture : textures[0]
+  if (!next || uniforms.uTexture.value === next) return
+  uniforms.uTexture.value = next
+  updateCoverScale()
 })
 
 onBeforeUnmount(() => {
@@ -254,6 +375,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('pointerleave', onPointerLeave)
   window.removeEventListener('resize', resize)
   if (resizeObserver) resizeObserver.disconnect()
+  if (coverObserver) coverObserver.disconnect()
 
   textures.forEach((texture: THREE.Texture) => texture.dispose())
   geometry?.dispose()

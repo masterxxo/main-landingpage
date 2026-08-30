@@ -38,6 +38,7 @@ export const fragmentShader = /* glsl */ `
   uniform sampler2D uDepth;
   uniform vec2 uPointer;
   uniform vec2 uCoverScale;
+  uniform vec2 uCoverOffset;
   uniform float uStrength;
   uniform float uTime;
   uniform float uDrift;
@@ -75,8 +76,9 @@ export const fragmentShader = /* glsl */ `
   }
 
   void main() {
-    // cover: skalujemy UV wokół środka, żeby obrazek nie był rozciągnięty
-    vec2 uv = (vUv - 0.5) * uCoverScale + 0.5;
+    // cover: skalujemy UV wokół środka, żeby obrazek nie był rozciągnięty;
+    // uCoverOffset przesuwa kadr (np. pionowe ognisko twarzy dla secondImage)
+    vec2 uv = (vUv - 0.5) * uCoverScale + 0.5 + uCoverOffset;
 
     vec2 drift = vec2(
       sin(uTime * 0.32) * 0.5,
