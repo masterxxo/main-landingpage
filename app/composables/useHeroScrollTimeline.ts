@@ -265,9 +265,10 @@ export function useHeroScrollTimeline(
       }, HERO_END + shrink.start + shrink.duration * 0.45)
 
       // copyIn — wjazd pionowego „ROGSON" i bloku opisu po prawej.
-      .fromTo(aboutSideLabel.value, { autoAlpha: 0, yPercent: 6 }, {
+      .fromTo(aboutSideLabel.value, { autoAlpha: 0, x: -160, yPercent: -44 }, {
         autoAlpha: 1,
-        yPercent: 0,
+        x: -160,
+        yPercent: -50,
         duration: copyIn.duration,
       }, HERO_END + copyIn.start)
       .fromTo(aboutCopy.value, { autoAlpha: 0, x: 48 }, {

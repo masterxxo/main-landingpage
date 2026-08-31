@@ -281,7 +281,7 @@ const tilt = useCardTilt({
   top: 50%;
   left: calc(var(--about-final-left) - var(--about-sidelabel-gap));
   z-index: 4;
-  transform: translate(-100%, -50%) rotate(180deg);
+  transform: translate(-160px, -50%) rotate(180deg);
   writing-mode: vertical-rl;
   text-orientation: sideways;
   color: #fff;
