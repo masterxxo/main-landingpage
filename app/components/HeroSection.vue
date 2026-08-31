@@ -105,9 +105,12 @@
       <div ref="aboutCopy" class="about-copy">
         <span class="about-copy__index">002</span>
         <h2 class="about-copy__title">ABOUT</h2>
-        <p class="about-copy__text">
-          Placeholder — krótki opis o Rogson. Treść dopasujemy później.
-        </p>
+        <AnimatedWriterText
+          class="about-copy__text"
+          :active="hasReachedEnd"
+          :ms-per-character="18"
+          text="8 years on the frontend — Vue, React, and everything that came with actually shipping products. On the side, I taught myself the backend too — curiosity doesn't wait for someone to greenlight it. Now I'm moving into product engineering: owning software end to end instead of just one layer of it. AI handles a lot of the code these days — I handle the thinking."
+        />
       </div>
     </div>
 
@@ -211,7 +214,7 @@ const scroll = useHeroScrollTimeline(
   },
 )
 
-const { isStaticLayout, heroSettled, restingCardPath } = scroll
+const { isStaticLayout, heroSettled, hasReachedEnd, restingCardPath } = scroll
 const showEndContent = computed(() => isStaticLayout.value || heroSettled.value)
 
 const tilt = useCardTilt({
