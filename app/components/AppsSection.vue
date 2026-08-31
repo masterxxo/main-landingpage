@@ -27,8 +27,14 @@
           </div>
 
           <div class="app-card__body">
+            <img
+              v-if="app.logo"
+              class="app-card__icon"
+              :src="app.logo"
+              alt=""
+            >
             <!-- Hook do podmiany: `icon` może być później komponentem Vue. -->
-            <component :is="app.icon" v-if="app.icon" class="app-card__icon" />
+            <component :is="app.icon" v-else-if="app.icon" class="app-card__icon" />
             <span v-else class="app-card__icon-placeholder" aria-hidden="true" />
             <h3 class="app-card__name">{{ app.name }}</h3>
 
@@ -55,6 +61,7 @@ interface AppItem {
   status: string
   statusClass: string
   description?: string
+  logo?: string
   icon?: Component
 }
 
@@ -63,6 +70,7 @@ const apps: AppItem[] = [
     name: 'SoloQuest',
     status: 'LIVE',
     statusClass: 'live',
+    logo: '/img/soloquest_logo_transparent.png',
     description: 'Tracker questów, który zbudowałem dla siebie — Nuxt 4, Hono i Drizzle na własnym serwerze. Testowa wersja tego, jak lubię teraz pisać software.',
   },
   { name: 'App #2', status: 'IN PROGRESS', statusClass: 'progress' },
@@ -208,6 +216,15 @@ useAppsScrollTimeline(
   width: 34px;
   height: 34px;
   margin: 0 0 28px 7px;
+  transform-origin: left bottom;
+  will-change: transform;
+}
+
+.app-card__icon {
+  width: 54px;
+  height: 54px;
+  margin: 0 0 14px;
+  object-fit: contain;
 }
 
 .app-card__icon-placeholder {
@@ -223,6 +240,8 @@ useAppsScrollTimeline(
   line-height: 0.9;
   letter-spacing: -0.05em;
   white-space: nowrap;
+  transform-origin: left bottom;
+  will-change: transform;
 }
 
 .app-card__description,
@@ -273,7 +292,10 @@ useAppsScrollTimeline(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-card {
+  .app-card,
+  .app-card__icon,
+  .app-card__icon-placeholder,
+  .app-card__name {
     will-change: auto;
   }
 }

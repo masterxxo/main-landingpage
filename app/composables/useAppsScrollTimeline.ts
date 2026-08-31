@@ -30,7 +30,15 @@ export function useAppsScrollTimeline(
     if (!els.section.value || !els.stage.value || els.cards.value.length !== 3) return
 
     const cards = els.cards.value
+    const iconTargets = cards.map(card => [
+      card.querySelector<HTMLElement>('.app-card__icon'),
+      card.querySelector<HTMLElement>('.app-card__icon-placeholder'),
+    ].filter((target): target is HTMLElement => target !== null))
+    const nameTargets = cards.map(card => card.querySelector<HTMLElement>('.app-card__name'))
+
     gsap.set(cards, { flexGrow: APPS_CARD_FLEX.idle, opacity: 1 })
+    gsap.set(iconTargets.flat(), { scale: 1, y: 0 })
+    gsap.set(nameTargets, { scale: 1 })
 
     entrance = gsap.fromTo(els.stage.value, {
       autoAlpha: 0,
@@ -79,6 +87,17 @@ export function useAppsScrollTimeline(
         timeline!.to(target, {
           flexGrow: index === activeIndex ? APPS_CARD_FLEX.active : APPS_CARD_FLEX.idle,
           opacity: index === activeIndex ? 1 : 0.34,
+          duration: expand,
+        }, start)
+
+        timeline!.to(iconTargets[index] ?? [], {
+          scale: index === activeIndex ? 1.75 : 1,
+          y: index === activeIndex ? -48 : 0,
+          duration: expand,
+        }, start)
+
+        timeline!.to(nameTargets[index], {
+          scale: index === activeIndex ? 1.75 : 1,
           duration: expand,
         }, start)
       })
@@ -145,6 +164,9 @@ export function useAppsScrollTimeline(
     if (els.stage.value) gsap.set(els.stage.value, { clearProps: 'opacity,visibility,transform' })
     els.cards.value.forEach(card => {
       gsap.set(card, { clearProps: 'opacity,visibility,transform,flex-grow' })
+      gsap.set(card.querySelectorAll('.app-card__icon, .app-card__icon-placeholder, .app-card__name'), {
+        clearProps: 'transform',
+      })
     })
   }
 
