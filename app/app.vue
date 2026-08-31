@@ -7,6 +7,7 @@
       :preload="['/img/hero_main.png', '/img/hero-depth-12.png', '/img/about_img.jpeg']"
     />
     <HeroSection />
+    <AppsSection />
     <NavigationOverlay />
   </div>
 </template>
