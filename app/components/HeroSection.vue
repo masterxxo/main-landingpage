@@ -94,17 +94,20 @@
         </div>
       </div>
 
-      <div ref="aboutBg" class="about-bg" aria-hidden="true" />
-      <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
-      <div ref="aboutCopy" class="about-copy">
-        <span class="about-copy__index">002</span>
-        <h2 class="about-copy__title">ABOUT</h2>
-        <AnimatedWriterText
-          class="about-copy__text"
-          :active="hasReachedEnd"
-          :ms-per-character="18"
-          text="8 years on the frontend — Vue, React, and everything that came with actually shipping products. On the side, I taught myself the backend too — curiosity doesn't wait for someone to greenlight it. Now I'm moving into product engineering: owning software end to end instead of just one layer of it. AI handles a lot of the code these days — I handle the thinking."
-        />
+      <div class="about-section">
+        <div ref="aboutBg" class="about-bg" aria-hidden="true" />
+        <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
+        <img class="about-mobile-image" src="/img/about_img.jpeg" alt="" aria-hidden="true">
+        <div ref="aboutCopy" class="about-copy">
+          <span class="about-copy__index">002</span>
+          <h2 class="about-copy__title">ABOUT</h2>
+          <AnimatedWriterText
+            class="about-copy__text"
+            :active="hasReachedEnd"
+            :ms-per-character="18"
+            text="8 years on the frontend — Vue, React, and everything that came with actually shipping products. On the side, I taught myself the backend too — curiosity doesn't wait for someone to greenlight it. Now I'm moving into product engineering: owning software end to end instead of just one layer of it. AI handles a lot of the code these days — I handle the thinking."
+          />
+        </div>
       </div>
     </div>
 
@@ -258,6 +261,14 @@ const tilt = useCardTilt({
   z-index: 2;
   background: #000;
   pointer-events: none;
+}
+
+.about-section {
+  display: contents;
+}
+
+.about-mobile-image {
+  display: none;
 }
 
 .about-sidelabel {
@@ -475,17 +486,65 @@ const tilt = useCardTilt({
 
 @media (max-width: 1023px) {
   .hero-scroll {
-    height: 100svh;
+    height: 200svh;
+  }
+
+  .hero-stage {
+    position: relative;
+    overflow: visible;
   }
 
   .project-title,
   .hero-media,
   .hero-statement,
-  .hero-grid,
-  .about-bg,
-  .about-sidelabel,
-  .about-copy {
+  .hero-grid {
     display: none;
+  }
+
+  .about-section {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    width: 100%;
+    min-height: 100svh;
+    padding: 72px 24px 56px;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .about-bg,
+  .about-sidelabel {
+    display: none;
+  }
+
+  .about-mobile-image {
+    display: block;
+    width: 100%;
+    height: min(48svh, 520px);
+    object-fit: cover;
+    object-position: center 62%;
+    clip-path: url('#hero-card-clip');
+  }
+
+  .about-copy {
+    position: relative;
+    top: auto;
+    left: auto;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+    transform: none;
+  }
+
+  .about-copy__title {
+    font-size: clamp(36px, 12vw, 64px);
+  }
+
+  .about-copy__text {
+    font-size: 14px;
   }
 }
 

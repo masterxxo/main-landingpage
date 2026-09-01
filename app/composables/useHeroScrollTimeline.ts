@@ -256,8 +256,13 @@ export function useHeroScrollTimeline(
     teardown()
     hooks.onDeactivate?.()
     if (event.matches) {
+      heroSettled.value = false
+      hasReachedEnd.value = false
       build()
       hooks.onActivate?.()
+    }
+    else {
+      hasReachedEnd.value = true
     }
   }
 
