@@ -8,6 +8,7 @@ import { DESKTOP_MIN_WIDTH, MOTION_ALLOWED_QUERY, REDUCED_MOTION_QUERY } from '~
 
 export interface HeroScrollElements {
   section: Ref<HTMLElement | null>
+  stage: Ref<HTMLElement | null>
   card: Ref<HTMLElement | null>
   clipPath: Ref<SVGPathElement | null>
   borderPath: Ref<SVGPathElement | null>
@@ -33,7 +34,6 @@ interface HeroScrollHooks {
 export interface HeroScrollTimeline {
   isStaticLayout: Ref<boolean>
   heroSettled: Ref<boolean>
-  hasReachedEnd: Ref<boolean>
   restingCardPath: ComputedRef<string>
   getProgress: () => number
 }
@@ -61,14 +61,12 @@ export function useHeroScrollTimeline(
 ): HeroScrollTimeline {
   const isStaticLayout = ref(false)
   const heroSettled = ref(false)
-  const hasReachedEnd = ref(false)
   const restingCardPath = computed(
     () => (isStaticLayout.value ? HERO_CLIP_FINAL : HERO_CLIP_INITIAL),
   )
 
   let timeline: gsap.core.Timeline | null = null
-  let desktopQuery: MediaQueryList | null = null
-  let staticQuery: MediaQueryList | null = null
+  let media: gsap.MatchMedia | null = null
   let heroSettleAt = 1
 
   function getProgress(): number {
@@ -80,7 +78,7 @@ export function useHeroScrollTimeline(
     els.borderPath.value?.setAttribute('d', restingCardPath.value)
   }
 
-  function build(): void {
+  function buildDesktop(): void {
     const { section, card, clipPath, borderPath, border, labels } = els
     const { title, grid, smallPlaceholder, sidePlaceholder, annotation } = els
     const { aboutBg, aboutSideLabel, aboutCopy } = els
@@ -110,7 +108,6 @@ export function useHeroScrollTimeline(
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           if (self.progress >= heroSettleAt) heroSettled.value = true
-          if (self.progress >= 0.995) hasReachedEnd.value = true
         },
       },
     })
@@ -231,10 +228,93 @@ export function useHeroScrollTimeline(
     heroSettleAt = timeline.totalDuration() > 0 ? HERO_END / timeline.totalDuration() : 1
   }
 
+  function buildMobile(): void {
+    const { section, stage, card, labels, title, grid, smallPlaceholder, sidePlaceholder, annotation } = els
+
+    if (
+      !section.value || !stage.value || !card.value || !labels.value || !title.value || !grid.value
+      || !smallPlaceholder.value || !sidePlaceholder.value || !annotation.value
+    ) return
+
+    gsap.set([title.value, grid.value, smallPlaceholder.value, sidePlaceholder.value, annotation.value], {
+      autoAlpha: 0,
+    })
+    const syncMobileSectionHeight = (): void => {
+      const aboutHeight = els.aboutCopy.value?.closest<HTMLElement>('.about-section')?.scrollHeight
+        ?? window.innerHeight
+      section.value?.style.setProperty('--mobile-about-height', `${aboutHeight}px`)
+    }
+    syncMobileSectionHeight()
+
+    timeline = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: section.value,
+        start: 'top top',
+        end: () => {
+          syncMobileSectionHeight()
+          return `+=${Math.round(window.innerHeight * 1.05)}`
+        },
+        pin: stage.value,
+        pinSpacing: false,
+        scrub: 0.55,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          if (self.progress >= 0.48) heroSettled.value = true
+        },
+      },
+    })
+
+    timeline
+      .to(labels.value, {
+        autoAlpha: 0,
+        y: -42,
+        duration: 0.16,
+      }, 0)
+      .fromTo(card.value, {
+        width: '100%',
+        height: '100svh',
+        left: '0%',
+        top: '0svh',
+      }, {
+        width: '86%',
+        height: '78svh',
+        left: '7%',
+        top: '11svh',
+        duration: 0.58,
+      }, 0)
+      .fromTo(title.value, { y: 34 }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.24,
+      }, 0.18)
+      .fromTo(grid.value, { autoAlpha: 0 }, {
+        autoAlpha: 1,
+        duration: 0.22,
+      }, 0.22)
+      .fromTo(smallPlaceholder.value, { x: -44 }, {
+        autoAlpha: 1,
+        x: 0,
+        duration: 0.26,
+      }, 0.38)
+      .fromTo(sidePlaceholder.value, { x: 44 }, {
+        autoAlpha: 1,
+        x: 0,
+        duration: 0.26,
+      }, 0.42)
+      .fromTo(annotation.value, { y: 16 }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.18,
+      }, 0.48)
+  }
+
   function teardown(): void {
     timeline?.scrollTrigger?.kill()
     timeline?.kill()
     timeline = null
+    els.section.value?.style.removeProperty('--mobile-about-height')
 
     syncRestingPath()
 
@@ -252,46 +332,48 @@ export function useHeroScrollTimeline(
     }
   }
 
-  function handleDesktopChange(event: MediaQueryListEvent | MediaQueryList): void {
-    teardown()
-    hooks.onDeactivate?.()
-    if (event.matches) {
-      heroSettled.value = false
-      hasReachedEnd.value = false
-      build()
-      hooks.onActivate?.()
-    }
-    else {
-      hasReachedEnd.value = true
-    }
-  }
-
-  function handleStaticChange(event: MediaQueryListEvent): void {
-    isStaticLayout.value = event.matches
-    syncRestingPath()
-  }
-
   onMounted(() => {
     gsap.registerPlugin(ScrollTrigger)
+    media = gsap.matchMedia()
+    media.add({
+      desktop: `(min-width: ${DESKTOP_MIN_WIDTH}px)`,
+      mobile: `(max-width: ${DESKTOP_MIN_WIDTH - 1}px)`,
+      portrait: '(orientation: portrait)',
+      motionAllowed: MOTION_ALLOWED_QUERY,
+      reducedMotion: REDUCED_MOTION_QUERY,
+    }, (context) => {
+      const { desktop, mobile, motionAllowed, reducedMotion } = context.conditions as Record<string, boolean>
 
-    staticQuery = window.matchMedia(
-      `(min-width: ${DESKTOP_MIN_WIDTH}px) and ${REDUCED_MOTION_QUERY}`,
-    )
-    isStaticLayout.value = staticQuery.matches
-    staticQuery.addEventListener('change', handleStaticChange)
+      teardown()
+      hooks.onDeactivate?.()
+      heroSettled.value = false
+      isStaticLayout.value = desktop && reducedMotion
+      syncRestingPath()
 
-    desktopQuery = window.matchMedia(
-      `(min-width: ${DESKTOP_MIN_WIDTH}px) and ${MOTION_ALLOWED_QUERY}`,
-    )
-    handleDesktopChange(desktopQuery)
-    desktopQuery.addEventListener('change', handleDesktopChange)
+      if (motionAllowed && desktop) {
+        buildDesktop()
+        hooks.onActivate?.()
+      }
+      else if (motionAllowed && mobile) {
+        buildMobile()
+      }
+      else {
+        heroSettled.value = true
+      }
+
+      ScrollTrigger.refresh()
+      return () => {
+        teardown()
+        hooks.onDeactivate?.()
+      }
+    })
   })
 
   onBeforeUnmount(() => {
-    staticQuery?.removeEventListener('change', handleStaticChange)
-    desktopQuery?.removeEventListener('change', handleDesktopChange)
+    media?.revert()
+    media = null
     teardown()
   })
 
-  return { isStaticLayout, heroSettled, hasReachedEnd, restingCardPath, getProgress }
+  return { isStaticLayout, heroSettled, restingCardPath, getProgress }
 }

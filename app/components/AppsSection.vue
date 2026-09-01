@@ -257,36 +257,77 @@ useAppsScrollTimeline(
   line-height: 1.5;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 968px) {
   .apps-section__stage {
-    display: block;
-    height: auto;
-    min-height: 100svh;
-    padding: 88px 24px 64px;
-    overflow: visible;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    gap: 24px;
+    height: 100svh;
+    min-height: 0;
+    padding: 72px 24px 32px;
+    overflow: hidden;
   }
 
   .apps-section__intro {
     max-width: 560px;
-    margin-bottom: 72px;
+    margin-bottom: 0;
+  }
+
+  .apps-section__title {
+    margin-bottom: 16px;
+    font-size: clamp(42px, 12vw, 64px);
+  }
+
+  .apps-section__description {
+    font-size: 13px;
+    line-height: 1.35;
   }
 
   .apps-track {
-    display: block;
-    height: auto;
-    border-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    border-bottom: 1px solid rgb(255 255 255 / 24%);
   }
 
   .app-card {
-    min-height: 62svh;
-    padding: 20px 18px 34px;
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 14px 18px 18px;
     border-right: 1px solid rgb(255 255 255 / 24%);
     border-bottom: 1px solid rgb(255 255 255 / 24%);
   }
 
+  .app-card:last-child {
+    border-bottom: 0;
+  }
+
+  .app-card__topline {
+    top: 12px;
+  }
+
+  .app-card__body {
+    max-height: calc(100% - 38px);
+  }
+
+  .app-card__icon,
+  .app-card__icon-placeholder {
+    margin-bottom: 10px;
+  }
+
   .app-card__name {
-    font-size: clamp(42px, 12vw, 68px);
+    font-size: clamp(30px, 9vw, 52px);
     white-space: normal;
+  }
+
+  .app-card__description,
+  .app-card__description-hook {
+    min-height: 0;
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.35;
   }
 }
 
@@ -296,6 +337,22 @@ useAppsScrollTimeline(
   .app-card__icon-placeholder,
   .app-card__name {
     will-change: auto;
+  }
+}
+
+@media (max-width: 968px) and (prefers-reduced-motion: reduce) {
+  .apps-section__stage {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+
+  .apps-track {
+    height: auto;
+  }
+
+  .app-card {
+    min-height: 42svh;
   }
 }
 </style>

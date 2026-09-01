@@ -1,7 +1,7 @@
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { Ref } from 'vue'
-import { REDUCED_MOTION_QUERY } from '~/constants/media'
+import { DESKTOP_MIN_WIDTH, MOTION_ALLOWED_QUERY, REDUCED_MOTION_QUERY } from '~/constants/media'
 
 interface ContactRevealElements {
   section: Ref<HTMLElement | null>
@@ -14,16 +14,10 @@ export function useContactReveal(
   onSectionActive: () => void,
 ): void {
   let timeline: gsap.core.Timeline | null = null
+  let media: gsap.MatchMedia | null = null
 
-  onMounted(() => {
+  function build(): void {
     if (!els.section.value || !els.heading.value) return
-
-    gsap.registerPlugin(ScrollTrigger)
-
-    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) {
-      onSectionActive()
-      return
-    }
 
     timeline = gsap.timeline({
       defaults: { ease: 'power3.out' },
@@ -43,9 +37,9 @@ export function useContactReveal(
         duration: 0.62,
         stagger: 0.12,
       }, '-=0.45')
-  })
+  }
 
-  onBeforeUnmount(() => {
+  function teardown(): void {
     timeline?.scrollTrigger?.kill()
     timeline?.kill()
     timeline = null
@@ -54,5 +48,32 @@ export function useContactReveal(
       gsap.set(els.heading.value, { clearProps: 'opacity,visibility,transform' })
     }
     gsap.set(els.contactItems.value, { clearProps: 'opacity,visibility,transform' })
+  }
+
+  onMounted(() => {
+    gsap.registerPlugin(ScrollTrigger)
+    media = gsap.matchMedia()
+    media.add({
+      desktop: `(min-width: ${DESKTOP_MIN_WIDTH}px)`,
+      mobile: `(max-width: ${DESKTOP_MIN_WIDTH - 1}px)`,
+      portrait: '(orientation: portrait)',
+      motionAllowed: MOTION_ALLOWED_QUERY,
+      reducedMotion: REDUCED_MOTION_QUERY,
+    }, (context) => {
+      const { motionAllowed, reducedMotion } = context.conditions as Record<string, boolean>
+
+      teardown()
+      if (reducedMotion) onSectionActive()
+      else if (motionAllowed) build()
+
+      ScrollTrigger.refresh()
+      return teardown
+    })
+  })
+
+  onBeforeUnmount(() => {
+    media?.revert()
+    media = null
+    teardown()
   })
 }

@@ -18,7 +18,7 @@
       </defs>
     </svg>
 
-    <div class="hero-stage">
+    <div ref="heroStage" class="hero-stage">
       <div ref="grid" class="hero-grid" aria-hidden="true">
         <span class="hero-grid__vertical" />
         <span class="hero-grid__horizontal" />
@@ -94,7 +94,7 @@
         </div>
       </div>
 
-      <div class="about-section">
+      <div ref="aboutSection" class="about-section">
         <div ref="aboutBg" class="about-bg" aria-hidden="true" />
         <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
         <img class="about-mobile-image" src="/img/about_img.jpeg" alt="" aria-hidden="true">
@@ -103,7 +103,7 @@
           <h2 class="about-copy__title">ABOUT</h2>
           <AnimatedWriterText
             class="about-copy__text"
-            :active="hasReachedEnd"
+            :active="aboutActive"
             :ms-per-character="18"
             text="8 years on the frontend — Vue, React, and everything that came with actually shipping products. On the side, I taught myself the backend too — curiosity doesn't wait for someone to greenlight it. Now I'm moving into product engineering: owning software end to end instead of just one layer of it. AI handles a lot of the code these days — I handle the thinking."
           />
@@ -140,6 +140,7 @@ const labels: HeroLabel[] = [
 const { isRevealed, isVideoVisible, toHeroReady } = useBoot()
 
 const section = ref<HTMLElement | null>(null)
+const heroStage = ref<HTMLElement | null>(null)
 const heroCard = ref<HTMLElement | null>(null)
 const heroTilt = ref<HTMLElement | null>(null)
 const heroLabels = ref<HTMLElement | null>(null)
@@ -151,8 +152,10 @@ const heroBorder = ref<{ pathEl: SVGPathElement | null, root: SVGSVGElement | nu
 const smallPlaceholder = ref<{ root: HTMLElement | null } | null>(null)
 const sidePlaceholder = ref<{ root: HTMLElement | null } | null>(null)
 const aboutBg = ref<HTMLElement | null>(null)
+const aboutSection = ref<HTMLElement | null>(null)
 const aboutSideLabel = ref<HTMLElement | null>(null)
 const aboutCopy = ref<HTMLElement | null>(null)
+const aboutActive = ref(false)
 
 const cardReveal = ref<number | undefined>(undefined)
 const cardShowSecond = ref(false)
@@ -183,6 +186,7 @@ function openVideo(rect: DOMRect): void {
 const scroll = useHeroScrollTimeline(
   {
     section,
+    stage: heroStage,
     card: heroCard,
     clipPath: heroClipPath,
     borderPath: computed(() => heroBorder.value?.pathEl ?? null),
@@ -205,14 +209,16 @@ const scroll = useHeroScrollTimeline(
   },
 )
 
-const { isStaticLayout, heroSettled, hasReachedEnd, restingCardPath } = scroll
+const { isStaticLayout, heroSettled, restingCardPath } = scroll
 const showEndContent = computed(() => isStaticLayout.value || heroSettled.value)
+useAboutReveal(section, aboutSection, aboutActive)
 
 const tilt = useCardTilt({
   surface: heroCard,
   target: heroTilt,
   enabled: () => scroll.getProgress() >= HERO_TIMELINE.tiltActiveFrom,
 })
+
 </script>
 
 <style scoped>
@@ -484,9 +490,9 @@ const tilt = useCardTilt({
   line-height: 1;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 968px) {
   .hero-scroll {
-    height: 200svh;
+    height: calc(205svh + var(--mobile-about-height, 100svh));
   }
 
   .hero-stage {
@@ -494,11 +500,50 @@ const tilt = useCardTilt({
     overflow: visible;
   }
 
-  .project-title,
-  .hero-media,
-  .hero-statement,
   .hero-grid {
-    display: none;
+    --hero-grid-x: 76%;
+    --hero-grid-y: 42%;
+  }
+
+  .project-title {
+    top: 11%;
+    left: 24px;
+    z-index: 5;
+    width: calc(100% - 48px);
+  }
+
+  .project-title h1 {
+    font-size: clamp(34px, 9.5vw, 62px);
+  }
+
+  .hero-media--small {
+    top: 45%;
+    left: 24px;
+    z-index: 5;
+    width: min(42vw, 240px);
+  }
+
+  .hero-media--side {
+    top: 48%;
+    right: 24px;
+    z-index: 5;
+    width: min(34vw, 210px);
+    height: 27svh;
+  }
+
+  .hero-statement {
+    bottom: 7%;
+    left: 24px;
+    z-index: 5;
+    width: min(66vw, 430px);
+    font-size: 14px;
+  }
+
+  .hero-card__annotation {
+    top: auto;
+    bottom: 18px;
+    left: auto;
+    right: 24px;
   }
 
   .about-section {
@@ -548,7 +593,7 @@ const tilt = useCardTilt({
   }
 }
 
-@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+@media (min-width: 969px) and (prefers-reduced-motion: reduce) {
   .hero-scroll {
     height: 100svh;
   }

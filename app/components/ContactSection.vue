@@ -273,7 +273,7 @@ useContactReveal(
   font-size: 20px;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 968px) {
   .contact-section {
     background-position: center;
   }
