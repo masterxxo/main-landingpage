@@ -6,6 +6,8 @@ export const HERO_CARD = {
   topRatio: 0.5,
 } as const
 
+export const MOBILE_HERO_PIN_SCREENS = 1.05
+
 export const HERO_TIMELINE = {
   reshape: { start: 0.08, duration: 0.72 },
   labelsOut: { start: 0, duration: 0.2 },

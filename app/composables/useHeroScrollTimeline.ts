@@ -2,7 +2,7 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { ComputedRef, Ref } from 'vue'
 import { HERO_CLIP_FINAL, HERO_CLIP_INITIAL } from '~/constants/heroClipPaths'
-import { HERO_CARD, HERO_TIMELINE } from '~/constants/heroLayout'
+import { HERO_CARD, HERO_TIMELINE, MOBILE_HERO_PIN_SCREENS } from '~/constants/heroLayout'
 import { ABOUT_CARD_FINAL, ABOUT_PHASE } from '~/constants/aboutLayout'
 import { DESKTOP_MIN_WIDTH, MOTION_ALLOWED_QUERY, REDUCED_MOTION_QUERY } from '~/constants/media'
 
@@ -269,7 +269,7 @@ export function useHeroScrollTimeline(
         start: 'top top',
         end: () => {
           syncMobileSectionHeight()
-          return `+=${Math.round(window.innerHeight * 1.05)}`
+          return `+=${Math.round(window.innerHeight * MOBILE_HERO_PIN_SCREENS)}`
         },
         pin: stage.value,
         pinSpacing: false,
