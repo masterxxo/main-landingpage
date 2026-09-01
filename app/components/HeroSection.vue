@@ -562,7 +562,7 @@ const tilt = useCardTilt({
 
   .hero-labels :deep(.scramble__text),
   .hero-labels :deep(.scramble__sizer) {
-    font-size: clamp(34px, 10vw, 48px) !important;
+    font-size: clamp(40px, 10vw, 94px) !important;
   }
 
   .about-section {
@@ -609,6 +609,32 @@ const tilt = useCardTilt({
 
   .about-copy__text {
     font-size: 14px;
+  }
+}
+
+@media (min-width: 969px) and (max-width: 1023px) {
+  .hero-labels {
+    right: 64px;
+  }
+
+  .hero-label:not(:last-child) {
+    margin-bottom: -8px;
+  }
+
+  .hero-labels :deep(.scramble__text),
+  .hero-labels :deep(.scramble__sizer) {
+    font-size: 82px !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .hero-labels {
+    right: clamp(64px, 9vw, 126px);
+  }
+
+  .hero-labels :deep(.scramble__text),
+  .hero-labels :deep(.scramble__sizer) {
+    font-size: calc(82px + (100vw - 1024px) * 0.155) !important;
   }
 }
 
