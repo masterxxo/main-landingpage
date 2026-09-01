@@ -229,16 +229,32 @@ export function useHeroScrollTimeline(
   }
 
   function buildMobile(): void {
-    const { section, stage, card, labels, title, grid, smallPlaceholder, sidePlaceholder, annotation } = els
+    const { section, stage, card, clipPath, borderPath, border, labels } = els
+    const { title, grid, smallPlaceholder, sidePlaceholder, annotation } = els
 
     if (
-      !section.value || !stage.value || !card.value || !labels.value || !title.value || !grid.value
+      !section.value || !stage.value || !card.value || !clipPath.value || !borderPath.value
+      || !border.value || !labels.value || !title.value || !grid.value
       || !smallPlaceholder.value || !sidePlaceholder.value || !annotation.value
     ) return
 
     gsap.set([title.value, grid.value, smallPlaceholder.value, sidePlaceholder.value, annotation.value], {
       autoAlpha: 0,
     })
+    gsap.set(border.value, { autoAlpha: 0 })
+    clipPath.value.setAttribute('d', HERO_CLIP_INITIAL)
+    borderPath.value.setAttribute('d', HERO_CLIP_INITIAL)
+
+    const mobileCardRect = () => {
+      const width = Math.min(window.innerWidth * 0.82, HERO_CARD.maxWidth)
+      const height = Math.min(width * (HERO_CARD.height / HERO_CARD.maxWidth), window.innerHeight * 0.52)
+      return {
+        width,
+        height,
+        left: (window.innerWidth - width) / 2,
+        top: window.innerHeight * 0.24,
+      }
+    }
     const syncMobileSectionHeight = (): void => {
       const aboutHeight = els.aboutCopy.value?.closest<HTMLElement>('.about-section')?.scrollHeight
         ?? window.innerHeight
@@ -261,7 +277,7 @@ export function useHeroScrollTimeline(
         anticipatePin: 1,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
-          if (self.progress >= 0.48) heroSettled.value = true
+          heroSettled.value = self.progress >= 0.48
         },
       },
     })
@@ -275,15 +291,23 @@ export function useHeroScrollTimeline(
       .fromTo(card.value, {
         width: '100%',
         height: '100svh',
-        left: '0%',
-        top: '0svh',
+        left: 0,
+        top: 0,
       }, {
-        width: '86%',
-        height: '78svh',
-        left: '7%',
-        top: '11svh',
+        width: () => mobileCardRect().width,
+        height: () => mobileCardRect().height,
+        left: () => mobileCardRect().left,
+        top: () => mobileCardRect().top,
         duration: 0.58,
       }, 0)
+      .to([clipPath.value, borderPath.value], {
+        attr: { d: HERO_CLIP_FINAL },
+        duration: 0.58,
+      }, 0)
+      .to(border.value, {
+        autoAlpha: 1,
+        duration: 0.2,
+      }, 0.38)
       .fromTo(title.value, { y: 34 }, {
         autoAlpha: 1,
         y: 0,
