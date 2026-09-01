@@ -2,8 +2,9 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { ComputedRef, Ref } from 'vue'
 import { HERO_CLIP_FINAL, HERO_CLIP_INITIAL } from '~/constants/heroClipPaths'
-import { DESKTOP_MIN_WIDTH, HERO_CARD, HERO_TIMELINE } from '~/constants/heroLayout'
+import { HERO_CARD, HERO_TIMELINE } from '~/constants/heroLayout'
 import { ABOUT_CARD_FINAL, ABOUT_PHASE } from '~/constants/aboutLayout'
+import { DESKTOP_MIN_WIDTH, MOTION_ALLOWED_QUERY, REDUCED_MOTION_QUERY } from '~/constants/media'
 
 export interface HeroScrollElements {
   section: Ref<HTMLElement | null>
@@ -269,13 +270,13 @@ export function useHeroScrollTimeline(
     gsap.registerPlugin(ScrollTrigger)
 
     staticQuery = window.matchMedia(
-      `(min-width: ${DESKTOP_MIN_WIDTH}px) and (prefers-reduced-motion: reduce)`,
+      `(min-width: ${DESKTOP_MIN_WIDTH}px) and ${REDUCED_MOTION_QUERY}`,
     )
     isStaticLayout.value = staticQuery.matches
     staticQuery.addEventListener('change', handleStaticChange)
 
     desktopQuery = window.matchMedia(
-      `(min-width: ${DESKTOP_MIN_WIDTH}px) and (prefers-reduced-motion: no-preference)`,
+      `(min-width: ${DESKTOP_MIN_WIDTH}px) and ${MOTION_ALLOWED_QUERY}`,
     )
     handleDesktopChange(desktopQuery)
     desktopQuery.addEventListener('change', handleDesktopChange)

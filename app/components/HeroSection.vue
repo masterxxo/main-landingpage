@@ -26,17 +26,14 @@
 
       <div ref="heroCard" class="hero-card">
         <div ref="heroTilt" class="hero-card__tilt">
-          <HeroParallax
+          <HeroCardVisual
             image="/img/hero_main.png"
-            depth-map="/img/hero-depth-12.png"
             second-image="/img/about_img.jpeg"
             :active="isRevealed"
             :reveal="cardReveal"
             :show-second="cardShowSecond"
             :second-zoom="0.93"
             :second-focus-y="0.12"
-            :strength="0"
-            :drift="0"
             fixed-size
             @revealed="handleHeroRevealed"
           />

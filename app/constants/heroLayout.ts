@@ -1,5 +1,3 @@
-export const DESKTOP_MIN_WIDTH = 1024
-
 export const HERO_CARD = {
   maxWidth: 480,
   widthRatio: 0.27,

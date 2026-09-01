@@ -1,6 +1,7 @@
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { Ref } from 'vue'
+import { REDUCED_MOTION_QUERY } from '~/constants/media'
 
 interface ContactRevealElements {
   section: Ref<HTMLElement | null>
@@ -19,7 +20,7 @@ export function useContactReveal(
 
     gsap.registerPlugin(ScrollTrigger)
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) {
       onSectionActive()
       return
     }

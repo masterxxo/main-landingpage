@@ -1,20 +1,16 @@
 <script setup lang="ts">
 import { gsap } from 'gsap'
 import * as THREE from 'three'
-import { fragmentShader, vertexShader } from '~/shaders/heroParallax'
+import { fragmentShader, vertexShader } from '~/shaders/heroCard'
+import { REDUCED_MOTION_QUERY } from '~/constants/media'
 
-interface HeroParallaxProps {
+interface HeroCardVisualProps {
   image: string
-  depthMap: string
-  strength?: number
-  damping?: number
-  drift?: number
   active?: boolean
   fixedSize?: boolean
   skipIntro?: boolean
   reveal?: number
   secondImage?: string
-  secondDepthMap?: string
   showSecond?: boolean
   secondZoom?: number
   secondFocusY?: number
@@ -22,23 +18,15 @@ interface HeroParallaxProps {
 
 interface HeroUniforms extends Record<string, THREE.IUniform> {
   uTexture: THREE.IUniform<THREE.Texture>
-  uDepth: THREE.IUniform<THREE.Texture>
   uFlip: THREE.IUniform<number>
   uPerspective: THREE.IUniform<number>
   uApproach: THREE.IUniform<number>
   uScale: THREE.IUniform<number>
-  uPointer: THREE.IUniform<THREE.Vector2>
   uCoverScale: THREE.IUniform<THREE.Vector2>
   uCoverOffset: THREE.IUniform<THREE.Vector2>
-  uStrength: THREE.IUniform<number>
-  uTime: THREE.IUniform<number>
-  uDrift: THREE.IUniform<number>
 }
 
-const props = withDefaults(defineProps<HeroParallaxProps>(), {
-  strength: 0.015,
-  damping: 0.055,
-  drift: 0.15,
+const props = withDefaults(defineProps<HeroCardVisualProps>(), {
   active: true,
   fixedSize: false,
   secondZoom: 1,
@@ -68,8 +56,6 @@ let rafId = 0
 let resizeObserver: ResizeObserver | null = null
 let coverObserver: ResizeObserver | null = null
 let entranceTimeline: gsap.core.Timeline | null = null
-let pointerXTo: gsap.QuickToFunc | null = null
-let pointerYTo: gsap.QuickToFunc | null = null
 let reducedMotion = false
 let noIntro = false
 let externalReveal = false
@@ -146,40 +132,22 @@ function resize(): void {
   updateCoverScale()
 }
 
-function onPointerMove(event: PointerEvent): void {
-  if (!container.value) return
-  const rect = container.value.getBoundingClientRect()
-
-  pointerXTo?.(((event.clientX - rect.left) / rect.width) * 2 - 1)
-  pointerYTo?.(-(((event.clientY - rect.top) / rect.height) * 2 - 1))
-}
-
-function onPointerLeave(): void {
-  pointerXTo?.(0)
-  pointerYTo?.(0)
-}
-
 onMounted(async () => {
   if (!container.value) return
 
-  reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches
   noIntro = reducedMotion || props.skipIntro === true
   externalReveal = props.reveal !== undefined
 
   const startFlat = noIntro && !externalReveal
 
-  const [texture, depth]: [THREE.Texture, THREE.Texture] = await Promise.all([
-    loadTexture(props.image),
-    loadTexture(props.depthMap),
-  ])
-
-  textures = [texture, depth]
+  const texture = await loadTexture(props.image)
+  textures = [texture]
 
   if (props.secondImage) {
     secondTexture = await loadTexture(props.secondImage)
     secondTexture.colorSpace = THREE.SRGBColorSpace
     textures.push(secondTexture)
-    if (props.secondDepthMap) textures.push(await loadTexture(props.secondDepthMap))
   }
 
   scene = new THREE.Scene()
@@ -188,17 +156,12 @@ onMounted(async () => {
 
   uniforms = {
     uTexture: { value: texture },
-    uDepth: { value: depth },
     uFlip: { value: startFlat ? 1 : 0.02 },
     uPerspective: { value: 0.7 },
     uApproach: { value: 1.8 },
     uScale: { value: startFlat ? 1 : 0.55 },
-    uPointer: { value: new THREE.Vector2(0, 0) },
     uCoverScale: { value: new THREE.Vector2(1, 1) },
     uCoverOffset: { value: new THREE.Vector2(0, 0) },
-    uStrength: { value: startFlat ? props.strength : 0 },
-    uTime: { value: 0 },
-    uDrift: { value: reducedMotion ? 0 : props.drift },
   }
 
   material = new THREE.ShaderMaterial({
@@ -252,11 +215,6 @@ onMounted(async () => {
       duration: FLIP_DURATION,
       ease: 'power2.inOut',
     }, 0)
-    .to(uniforms.uStrength, {
-      value: props.strength,
-      duration: FLIP_DURATION,
-      ease: 'power2.inOut',
-    }, 0)
 
   if (externalReveal) {
     entranceTimeline.progress(gsap.utils.clamp(0, 1, props.reveal as number))
@@ -267,27 +225,10 @@ onMounted(async () => {
     if (props.active) emitRevealed()
   }
   else {
-    const pointerDuration = Math.max(props.damping * 10, 0.1)
-    pointerXTo = gsap.quickTo(uniforms.uPointer.value, 'x', {
-      duration: pointerDuration,
-      ease: 'power2.out',
-    })
-    pointerYTo = gsap.quickTo(uniforms.uPointer.value, 'y', {
-      duration: pointerDuration,
-      ease: 'power2.out',
-    })
-
     if (props.active) entranceTimeline.play()
-
-    window.addEventListener('pointermove', onPointerMove, { passive: true })
-    window.addEventListener('pointerleave', onPointerLeave, { passive: true })
   }
 
-  const clock = new THREE.Timer()
-
   const loop = (): void => {
-    if (props.active && uniforms) uniforms.uTime.value = clock.getElapsed()
-
     if (renderer && scene && camera) renderer.render(scene, camera)
     rafId = requestAnimationFrame(loop)
   }
@@ -319,10 +260,6 @@ watch(() => props.showSecond, (show) => {
 onBeforeUnmount(() => {
   cancelAnimationFrame(rafId)
   entranceTimeline?.kill()
-  pointerXTo?.tween.kill()
-  pointerYTo?.tween.kill()
-  window.removeEventListener('pointermove', onPointerMove)
-  window.removeEventListener('pointerleave', onPointerLeave)
   window.removeEventListener('resize', resize)
   if (resizeObserver) resizeObserver.disconnect()
   if (coverObserver) coverObserver.disconnect()
