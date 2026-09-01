@@ -97,9 +97,6 @@
         </div>
       </div>
 
-      <!-- Faza ABOUT (druga część scrollowego timeline). Czarne dno wchodzi,
-           gdy kadr trzyma pełny ekran; „ROGSON" i opis wjeżdżają, gdy kadr
-           zmniejszy się do ~1/3. -->
       <div ref="aboutBg" class="about-bg" aria-hidden="true" />
       <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
       <div ref="aboutCopy" class="about-copy">
@@ -142,7 +139,6 @@ const labels: HeroLabel[] = [
 
 const { isRevealed, isVideoVisible, toHeroReady } = useBoot()
 
-// --- Template refs ---------------------------------------------------------
 const section = ref<HTMLElement | null>(null)
 const heroCard = ref<HTMLElement | null>(null)
 const heroTilt = ref<HTMLElement | null>(null)
@@ -158,12 +154,9 @@ const aboutBg = ref<HTMLElement | null>(null)
 const aboutSideLabel = ref<HTMLElement | null>(null)
 const aboutCopy = ref<HTMLElement | null>(null)
 
-// Sterowanie shaderem współdzielonego kadru w fazie ABOUT: scrub „wejścia"
-// (`HeroParallax` `:reveal`) oraz podmiana tekstury na rewers.
 const cardReveal = ref<number | undefined>(undefined)
 const cardShowSecond = ref(false)
 
-// --- Sekwencyjne odsłanianie labeli -------------------------------------
 const {
   containerShown: labelsShown,
   indexVisible: labelVisible,
@@ -178,7 +171,6 @@ function handleHeroRevealed(): void {
   void playLabelReveal()
 }
 
-// --- Modal z wideo (rozchodzi się od bocznego kadru) ------------------
 const isVideoOpen = ref(false)
 const videoOrigin = ref<VideoModalOrigin | null>(null)
 
@@ -188,7 +180,6 @@ function openVideo(rect: DOMRect): void {
   isVideoOpen.value = true
 }
 
-// --- Scrollowy timeline + tilt karty -----------------------------------
 const scroll = useHeroScrollTimeline(
   {
     section,
@@ -228,8 +219,6 @@ const tilt = useCardTilt({
 .hero-scroll {
   position: relative;
   width: 100%;
-  /* Droga scrolla dla całego scrubowanego timeline: bity hero + faza ABOUT
-     (odwrócenie zjazdu kadru, obrót, zjazd do ~1/3). */
   height: 560svh;
   background: #05060a;
   transition: background-color 600ms ease;
@@ -254,7 +243,6 @@ const tilt = useCardTilt({
   --navigation-header-height: 51px;
   --navigation-rail-width: 67px;
 
-  /* Faza ABOUT — docelowa geometria kadru (musi odpowiadać ABOUT_CARD_FINAL). */
   --about-final-width: min(33.333vw, 620px);
   --about-final-left: calc((100vw - var(--about-final-width)) / 2);
   --about-sidelabel-gap: clamp(16px, 3vw, 56px);
@@ -267,10 +255,6 @@ const tilt = useCardTilt({
   overflow: hidden;
 }
 
-/* Czarne „dno" fazy ABOUT. Kryciem steruje timeline (`useHeroScrollTimeline`):
-   niewidoczne dopóki kadr nie zakryje ekranu (włączane na `flip.start`), a wokół
-   zmniejszonego kadru odsłaniane dopiero przy `shrink`. Nad treścią hero,
-   pod kadrem (`.hero-card` ma z-index 3). */
 .about-bg {
   position: absolute;
   inset: 0;
@@ -368,9 +352,6 @@ const tilt = useCardTilt({
   height: 100svh;
   overflow: hidden;
   clip-path: url('#hero-card-clip');
-  /* top/left/width/height są nadal animowane w JS (layout na scrollu — patrz
-     review 1.3, do przepisania na transformy). Nie da się ich promować do
-     kompozytora, więc w will-change trzymamy tylko realnie kompozytowalny clip-path. */
   will-change: clip-path;
 }
 
@@ -422,7 +403,6 @@ const tilt = useCardTilt({
   letter-spacing: -0.055em;
 }
 
-/* Pozycja i rozmiar zaślepek — wygląd samego pola jest w MediaPlaceholder.vue. */
 .hero-media--small {
   top: 30%;
   left: 7.2%;
@@ -496,8 +476,6 @@ const tilt = useCardTilt({
   line-height: 1;
 }
 
-/* Wąski ekran: układ desktopowy się nie mieści — pokazujemy sam kadr + labele.
-   Faza ABOUT to efekt czysto scrollowy — bez scrubu nie pokazujemy jej elementów. */
 @media (max-width: 1023px) {
   .hero-scroll {
     height: 100svh;
@@ -514,10 +492,6 @@ const tilt = useCardTilt({
   }
 }
 
-/* Reduced-motion (≥1024px): renderujemy KOŃCOWY układ statycznie — bez długiego
-   scrolla i animacji, ale z pełną treścią (tytuł + kadry pozostają widoczne).
-   Geometria karty musi odpowiadać stałym HERO_CARD w constants/heroLayout.ts.
-   Faza ABOUT (scroll-only) jest wyłączona. */
 @media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
   .hero-scroll {
     height: 100svh;

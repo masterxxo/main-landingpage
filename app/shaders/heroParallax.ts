@@ -1,7 +1,5 @@
-// Shadery trzymamy poza .vue — znaki `<` i nawiasy klamrowe w GLSL
-// potrafią rozjechać narzędzia skanujące bloki <script> w SFC.
 
-export const vertexShader = /* glsl */ `
+export const vertexShader = `
 uniform float uFlip;
   uniform float uPerspective;
   uniform float uApproach;
@@ -16,7 +14,6 @@ uniform float uFlip;
     float c = uFlip;
     float s = sqrt(max(1.0 - c * c, 0.0));
 
-    // uScale kurczy CAŁĄ kartę - obie osie - więc rogi są widoczne
     vec2 p = position.xy * uScale;
 
     float x = p.x * c;
@@ -31,7 +28,7 @@ uniform float uFlip;
   }
 `
 
-export const fragmentShader = /* glsl */ `
+export const fragmentShader = `
   precision highp float;
 
   uniform sampler2D uTexture;
@@ -48,9 +45,6 @@ export const fragmentShader = /* glsl */ `
 
   const int STEPS = 16;
 
-  // Parallax occlusion mapping: idziemy warstwami w głąb aż trafimy
-  // na powierzchnię opisaną depth mapą. Daje ostre krawędzie zamiast
-  // rozmytego przesunięcia całej tekstury.
   vec2 parallax(vec2 uv, vec2 dir) {
     float layerDepth = 1.0 / float(STEPS);
     vec2 deltaUv = dir / float(STEPS);
@@ -66,7 +60,6 @@ export const fragmentShader = /* glsl */ `
       currentLayer += layerDepth;
     }
 
-    // interpolacja między ostatnimi dwoma krokami — kasuje schodkowanie
     vec2 prevUv = currentUv - deltaUv;
     float after = sampled - currentLayer;
     float before = (1.0 - texture2D(uDepth, prevUv).r) - currentLayer + layerDepth;
@@ -76,8 +69,6 @@ export const fragmentShader = /* glsl */ `
   }
 
   void main() {
-    // cover: skalujemy UV wokół środka, żeby obrazek nie był rozciągnięty;
-    // uCoverOffset przesuwa kadr (np. pionowe ognisko twarzy dla secondImage)
     vec2 uv = (vUv - 0.5) * uCoverScale + 0.5 + uCoverOffset;
 
     vec2 drift = vec2(
@@ -88,7 +79,6 @@ export const fragmentShader = /* glsl */ `
     vec2 dir = (uPointer + drift) * uStrength * uCoverScale;
     vec2 shifted = parallax(uv, dir);
 
-    // poza zakresem tekstury robią się smugi — przycinamy do krawędzi
     shifted = clamp(shifted, vec2(0.001), vec2(0.999));
 
     gl_FragColor = vec4(texture2D(uTexture, shifted).rgb * vShade, 1.0);

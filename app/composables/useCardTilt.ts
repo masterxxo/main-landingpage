@@ -2,23 +2,14 @@ import { gsap } from 'gsap'
 import type { Ref } from 'vue'
 
 interface CardTiltOptions {
-  /** Element łapiący ruch wskaźnika (hitbox). */
   surface: Ref<HTMLElement | null>
-  /** Element, który faktycznie się przechyla (rotationX / rotationY). */
   target: Ref<HTMLElement | null>
-  /** Maksymalne wychylenie w stopniach. */
-  maxDeg?: number
-  /** Predykat — czy tilt ma teraz reagować (np. dopiero po zjeździe karty). */
+  maxRotationDegrees?: number
   enabled?: () => boolean
 }
 
-/**
- * Przechył 3D elementu za wskaźnikiem, wygładzony przez `gsap.quickTo`.
- * `enable()` podpina nasłuch i tweeny, `disable()` sprząta — wołaj je zależnie
- * od tego, czy dana wersja układu w ogóle używa tiltu.
- */
 export function useCardTilt(options: CardTiltOptions) {
-  const { surface, target, maxDeg = 8, enabled = () => true } = options
+  const { surface, target, maxRotationDegrees = 8, enabled = () => true } = options
 
   let rotateXTo: gsap.QuickToFunc | null = null
   let rotateYTo: gsap.QuickToFunc | null = null
@@ -26,12 +17,12 @@ export function useCardTilt(options: CardTiltOptions) {
   function onPointerMove(event: PointerEvent): void {
     if (!surface.value || !enabled()) return
 
-    const rect = surface.value.getBoundingClientRect()
-    const x = (event.clientX - rect.left) / rect.width - 0.5
-    const y = (event.clientY - rect.top) / rect.height - 0.5
+    const surfaceBounds = surface.value.getBoundingClientRect()
+    const horizontalOffset = (event.clientX - surfaceBounds.left) / surfaceBounds.width - 0.5
+    const verticalOffset = (event.clientY - surfaceBounds.top) / surfaceBounds.height - 0.5
 
-    rotateXTo?.(-y * maxDeg)
-    rotateYTo?.(x * maxDeg)
+    rotateXTo?.(-verticalOffset * maxRotationDegrees)
+    rotateYTo?.(horizontalOffset * maxRotationDegrees)
   }
 
   function reset(): void {

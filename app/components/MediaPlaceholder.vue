@@ -25,24 +25,16 @@
 </template>
 
 <script setup lang="ts">
-// Zaślepka kadru: przyciemnione pole przycięte wspólnym kształtem, z obrysem
-// i etykietą. Pozycję i rozmiar nadaje rodzic (klasa) — komponent odpowiada
-// tylko za wygląd „ramki na obrazek".
 const props = defineProps<{
-  /** id elementu <clipPath> zdefiniowanego przez rodzica. */
   clipId: string
-  /** Ścieżka `d` obrysu — ta sama geometria co clipPath. */
   path: string
   label: string
   image?: string
-  /** Nakłada półprzezroczyste, ciemne tło z obracającą się na hover ikoną play. */
   playOverlay?: boolean
 }>()
 
 const emit = defineEmits<{ open: [origin: DOMRect] }>()
 
-// Trzymamy clip-path w arkuszu (przez v-bind), nie w inline :style — inaczej
-// GSAP `clearProps` na tym elemencie potrafi go zdjąć.
 const clipUrl = computed(() => `url("#${props.clipId}")`)
 
 const root = ref<HTMLElement | null>(null)
@@ -70,8 +62,7 @@ function emitOpen(): void {
   top: 18px;
   left: 18px;
   z-index: 1;
-  pointer-events: none; /* nie zasłania klikalnego overlaya play */
-}
+  pointer-events: none; }
 
 .media-placeholder__image {
   width: 100%;
@@ -117,8 +108,7 @@ function emitOpen(): void {
 .media-placeholder__play-icon {
   width: 20px;
   height: 20px;
-  margin-left: 3px; /* optyczne wyśrodkowanie trójkąta play */
-  fill: currentColor;
+  margin-left: 3px; fill: currentColor;
 }
 
 @media (prefers-reduced-motion: reduce) {

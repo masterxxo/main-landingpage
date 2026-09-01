@@ -35,8 +35,8 @@ const { phase } = useBoot()
 const percent = computed(() => Math.round(props.displayProgress * 100))
 
 const currentLine = computed(() => {
-  const i = Math.floor(props.displayProgress * props.logLines.length);
-  return Math.min(i, props.logLines.length - 1);
+  const lineIndex = Math.floor(props.displayProgress * props.logLines.length);
+  return Math.min(lineIndex, props.logLines.length - 1);
 });
 </script>
 

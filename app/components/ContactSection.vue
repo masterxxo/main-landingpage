@@ -82,7 +82,6 @@ const contacts: ContactItem[] = [
   },
 ]
 
-// Hook do podmiany placeholdera: przekaż np. background-image="/img/contact-city.webp".
 const resolvedBackgroundImage = computed(() => props.backgroundImage
   ? `url("${props.backgroundImage}")`
   : 'radial-gradient(circle at 76% 72%, rgb(222 38 139 / 26%), transparent 35%), radial-gradient(circle at 22% 62%, rgb(13 180 185 / 24%), transparent 38%), linear-gradient(155deg, #080b13 0%, #101526 48%, #050609 100%)')

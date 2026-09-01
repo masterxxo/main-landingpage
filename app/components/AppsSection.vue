@@ -33,7 +33,6 @@
               :src="app.logo"
               alt=""
             >
-            <!-- Hook do podmiany: `icon` może być później komponentem Vue. -->
             <component :is="app.icon" v-else-if="app.icon" class="app-card__icon" />
             <span v-else class="app-card__icon-placeholder" aria-hidden="true" />
             <h3 class="app-card__name">{{ app.name }}</h3>

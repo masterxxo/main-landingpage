@@ -92,34 +92,34 @@ function tick(): void {
       return
     }
 
-    let out = ''
+    let nextText = ''
     let allResolved = true
 
-    for (let i = 0; i < props.text.length; i++) {
-      const char = props.text[i]
+    for (let characterIndex = 0; characterIndex < props.text.length; characterIndex++) {
+      const char = props.text[characterIndex]
 
       if (char === ' ') {
-        out += ' '
+        nextText += ' '
         continue
       }
 
-      const charStart = i * props.stagger
+      const charStart = characterIndex * props.stagger
       const charEnd = charStart + props.scrambleDuration
 
       if (elapsed >= charEnd) {
-        out += char
+        nextText += char
       }
       else if (elapsed >= charStart) {
-        out += randomChar()
+        nextText += randomChar()
         allResolved = false
       }
       else {
-        out += char
+        nextText += char
         allResolved = false
       }
     }
 
-    displayed.value = out
+    displayed.value = nextText
 
     if (allResolved) {
       displayed.value = props.text
@@ -255,7 +255,6 @@ onBeforeUnmount(() => {
   z-index: 2;
   padding: inherit;
   color: #05060a;
-  /* ta sama krzywa i czas co wipe — krawędzie jadą razem */
   clip-path: inset(0 100% 0 0);
   transition: clip-path var(--wipe-duration) cubic-bezier(0.65, 0, 0.35, 1);
 }

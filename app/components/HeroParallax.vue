@@ -11,35 +11,12 @@ interface HeroParallaxProps {
   drift?: number
   active?: boolean
   fixedSize?: boolean
-  /**
-   * Pomija animację wejścia (flip / dojazd skali) i renderuje od razu stan
-   * końcowy — do reużycia tego samego kadru w innej sekcji bez powtórnego
-   * „odsłaniania".
-   */
   skipIntro?: boolean
-  /**
-   * Zewnętrzny scrub animacji wejścia w zakresie 0–1 (0 = odsunięty + obrócony
-   * „zoom out", 1 = wylądowany kadr hero). Gdy podane, komponent nie odtwarza
-   * wejścia sam — postęp ustawia rodzic (np. scroll ABOUT).
-   */
   reveal?: number
-  /** Druga tekstura (rewers) wczytywana z góry; podmieniana przez `showSecond`. */
   secondImage?: string
-  /** Depth map dla `secondImage` (domyślnie ta sama co `depthMap`). */
   secondDepthMap?: string
-  /** `true` → renderuj `secondImage` zamiast `image` (podmiana uniformu tekstury). */
   showSecond?: boolean
-  /**
-   * Zoom kadrowania `secondImage`: mnożnik „cover scale" (jak stałe 0.82 dla
-   * `image`). 1 = pełny „cover" bez dodatkowego przycięcia (cała twarz mieści
-   * się w ramce), <1 = mocniejszy zoom, >1 = oddalenie (ryzyko smug na
-   * krawędziach). Domyślnie 1.
-   */
   secondZoom?: number
-  /**
-   * Pionowe przesunięcie kadru `secondImage` w jednostkach UV (0–1). Dodatnie =
-   * pokazuje wyżej położony fragment zdjęcia (więcej głowy). Domyślnie 0.
-   */
   secondFocusY?: number
 }
 
@@ -68,7 +45,6 @@ const props = withDefaults(defineProps<HeroParallaxProps>(), {
   secondFocusY: 0,
 })
 
-/** Zoom kadrowania „cover" dla `image` (kadr hero — lekkie przybliżenie). */
 const COVER_ZOOM = 0.82
 
 const emit = defineEmits<{
@@ -90,8 +66,6 @@ let textures: THREE.Texture[] = []
 let secondTexture: THREE.Texture | null = null
 let rafId = 0
 let resizeObserver: ResizeObserver | null = null
-// Lekki obserwator (tylko `updateCoverScale`, bez `setSize`) — pilnuje kadrowania
-// rewersu, gdy kadr zmienia rozmiar animacją (zjazd ABOUT do ~1/3).
 let coverObserver: ResizeObserver | null = null
 let entranceTimeline: gsap.core.Timeline | null = null
 let pointerXTo: gsap.QuickToFunc | null = null
@@ -145,17 +119,10 @@ function updateCoverScale(): void {
     scale.set(boxRatio / imageRatio, 1)
   }
 
-  // `secondImage` ma własny zoom/ognisko, żeby twarz mieściła się w wąskiej
-  // ramce ABOUT; `image` (kadr hero) zostaje przy stałym lekkim przybliżeniu.
   const showingSecond = secondTexture !== null && texture === secondTexture
   scale.multiplyScalar(showingSecond ? props.secondZoom : COVER_ZOOM)
   uniforms.uCoverOffset.value.set(0, showingSecond ? props.secondFocusY : 0)
 
-  // Tryb `is-fixed-size`: bufor WebGL renderujemy RAZ w proporcjach pełnego
-  // ekranu i skalujemy CSS-em jak `object-fit: cover`. W wąskiej ramce ABOUT
-  // canvas wystaje poza kadr — bez kompensacji widać tylko środkowy pasek
-  // zdjęcia. Kompensujemy to w UV (bufora NIE ruszamy — żadnego `setSize` na
-  // klatce, więc nie klatkuje). Dotyczy tylko rewersu; kadr hero bez zmian.
   if (showingSecond && props.fixedSize && renderer) {
     const bufW = renderer.domElement.width
     const bufH = renderer.domElement.height
@@ -199,9 +166,6 @@ onMounted(async () => {
   noIntro = reducedMotion || props.skipIntro === true
   externalReveal = props.reveal !== undefined
 
-  // `startFlat` = brak animacji wejścia i brak zewnętrznego scrubu → od razu
-  // wylądowany kadr. Przy `reveal` startujemy od stanu „zoom out + obrót"
-  // i to rodzic decyduje o postępie.
   const startFlat = noIntro && !externalReveal
 
   const [texture, depth]: [THREE.Texture, THREE.Texture] = await Promise.all([
@@ -255,23 +219,14 @@ onMounted(async () => {
   resize()
   isReady.value = true
 
-  // `fixedSize` = kontener jest skalowany transformami/animacją z zewnątrz
-  // (np. karta hero zjeżdżająca na scrollu). Nie chcemy wtedy przeliczać bufora
-  // WebGL na każdej klatce przez ResizeObserver — canvas renderujemy raz w pełnej
-  // rozdzielczości i skalujemy CSS-em (`.is-fixed-size`). Reagujemy tylko na resize
-  // OKNA, żeby po obrocie ekranu / zmianie rozmiaru okna obraz nie był rozciągnięty.
   if (props.fixedSize) {
     window.addEventListener('resize', resize, { passive: true })
-    // Wyjątek: gdy pokazujemy rewers (`secondImage`), kadrowanie „cover" musi
-    // nadążać za kształtem kurczącej się ramki ABOUT. To SAM zapis uniformu
-    // (`updateCoverScale` — bez `setSize`), więc nie klatkuje. Dla `image`
-    // (kadr hero) obserwator nic nie robi.
     let lastCoverW = 0
     coverObserver = new ResizeObserver((entries) => {
       if (!uniforms || !secondTexture || uniforms.uTexture.value !== secondTexture) return
-      const w = Math.round(entries[0]?.contentRect.width ?? 0)
-      if (!w || w === lastCoverW) return
-      lastCoverW = w
+      const coverWidth = Math.round(entries[0]?.contentRect.width ?? 0)
+      if (!coverWidth || coverWidth === lastCoverW) return
+      lastCoverW = coverWidth
       updateCoverScale()
     })
     coverObserver.observe(container.value)
@@ -281,14 +236,11 @@ onMounted(async () => {
     resizeObserver.observe(container.value)
   }
 
-  // Podmiana na rewers już na starcie (statyczny/mobilny wariant ABOUT).
   if (props.showSecond && secondTexture) {
     uniforms.uTexture.value = secondTexture
     updateCoverScale()
   }
 
-  // Animacja wejścia (zoom + flip) — budujemy ZAWSZE, żeby dało się ją
-  // scrubować z zewnątrz przez `reveal`.
   entranceTimeline = gsap.timeline({ paused: true, onComplete: emitRevealed })
     .to(uniforms.uFlip, {
       value: 1,
@@ -350,14 +302,12 @@ watch(() => props.active, (isActive: boolean) => {
   else entranceTimeline?.pause()
 })
 
-// Zewnętrzny scrub animacji wejścia (0 = zoom out + obrót, 1 = kadr hero).
 watch(() => props.reveal, (value) => {
   if (value == null || !entranceTimeline) return
   entranceTimeline.progress(gsap.utils.clamp(0, 1, value))
   if (value >= 1) emitRevealed()
 })
 
-// Podmiana widocznej tekstury (awers ↔ rewers).
 watch(() => props.showSecond, (show) => {
   if (!uniforms) return
   const next = show ? secondTexture : textures[0]
