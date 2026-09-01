@@ -35,13 +35,10 @@
         </div>
         <div class="absolute top-0 left-0 w-16.75 h-full border-r border-white/20 flex flex-col items-center justify-between pointer-events-auto">
           <div>
-            <!-- Placeholder -->
-          </div>
+            </div>
           <div>
-            <!-- Image -->
-          </div>
+            </div>
           <div class="mb-6">
-            <!-- Sound BTN -->
             <button class="flex items-center space-x-0.5 cursor-pointer" @click="toggleAudioLoop">
               <audio class="hidden"></audio>
               <div

@@ -1,5 +1,3 @@
-export const APPS_DESKTOP_MIN_WIDTH = 1024
-
 export const APPS_TIMELINE = {
   hold: 0.45,
   expand: 1,

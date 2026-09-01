@@ -39,7 +39,6 @@
 </template>
 
 <script lang="ts">
-/** Geometria kadru startowego w px (współrzędne viewportu, jak `position: fixed`). */
 export interface VideoModalOrigin {
   top: number
   left: number
@@ -49,9 +48,6 @@ export interface VideoModalOrigin {
 </script>
 
 <script setup lang="ts">
-// Pełnoekranowy modal z odtwarzaczem YouTube. Otwierając się „rozchodzi się"
-// od kadru, który go wywołał — `origin` to `getBoundingClientRect()` tego kadru
-// (współrzędne viewportu, zgodne z `position: fixed` ramki).
 const props = withDefaults(
   defineProps<{
     open: boolean
@@ -66,7 +62,6 @@ const emit = defineEmits<{ close: [] }>()
 
 const MARGIN = 15
 const MOTION_MS = 460
-// Współdzielone z `transition-duration` ramki w <style> (jedno źródło prawdy).
 const motionDuration = `${MOTION_MS}ms`
 
 const mounted = ref(false)
@@ -145,14 +140,11 @@ function enter(): void {
     return
   }
 
-  // Dwa rAF-y: pierwsze malowanie w geometrii `origin`, potem morfing do celu.
   rafId = requestAnimationFrame(() => {
     rafId = requestAnimationFrame(() => {
       expanded.value = true
     })
   })
-  // iframe montujemy po zakończeniu rozwijania — w trakcie animacji widać
-  // prześwitujący kadr, a nie miniaturowy odtwarzacz.
   iframeTimer = setTimeout(() => {
     if (props.open) showIframe.value = true
   }, MOTION_MS)
@@ -185,8 +177,6 @@ function onKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape' && props.open) emit('close')
 }
 
-// Prosty strażnik focusu: gdy modal jest otwarty, a focus wyjdzie poza dialog,
-// wracamy nim na przycisk zamknięcia (Tab wewnątrz, do iframe, nadal działa).
 function onFocusIn(event: FocusEvent): void {
   if (!props.open || !dialogEl.value) return
   if (dialogEl.value.contains(event.target as Node)) return

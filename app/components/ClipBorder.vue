@@ -11,13 +11,8 @@
 </template>
 
 <script setup lang="ts">
-// Rysuje widoczny obrys wzdłuż tej samej ścieżki, której używa `clip-path`
-// elementu-rodzica (clip-path sam w sobie nie da się obrysować).
-// Kolor i grubość nadpiszesz zmiennymi `--clip-border-stroke` / `--clip-border-width`.
 defineProps<{ path: string }>()
 
-// Wystawiamy <path> (GSAP `attr: { d }`) oraz korzeń <svg> (np. wygaszanie
-// całego obrysu przez `autoAlpha`, gdy kadr rośnie na pełny ekran).
 const pathEl = ref<SVGPathElement | null>(null)
 const root = ref<SVGSVGElement | null>(null)
 defineExpose({ pathEl, root })

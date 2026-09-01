@@ -1,4 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue'
+import { REDUCED_MOTION_QUERY } from '~/constants/media'
 
 interface TextWriterOptions {
   msPerCharacter?: number
@@ -55,7 +56,7 @@ export function useTextWriter(
   })
 
   onMounted(() => {
-    reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    reducedMotionQuery = window.matchMedia(REDUCED_MOTION_QUERY)
     start()
   })
 

@@ -1,7 +1,8 @@
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import type { Ref } from 'vue'
-import { APPS_CARD_FLEX, APPS_DESKTOP_MIN_WIDTH, APPS_TIMELINE } from '~/constants/appsLayout'
+import { APPS_CARD_FLEX, APPS_TIMELINE } from '~/constants/appsLayout'
+import { DESKTOP_MIN_WIDTH, MOTION_ALLOWED_QUERY, REDUCED_MOTION_QUERY } from '~/constants/media'
 
 interface AppsScrollElements {
   section: Ref<HTMLElement | null>
@@ -118,7 +119,7 @@ export function useAppsScrollTimeline(
 
     gsap.set(els.stage.value, { clearProps: 'all' })
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) {
       hooks.onSectionActive()
       els.cards.value.forEach((card, index) => {
         gsap.set(card, { clearProps: 'all' })
@@ -180,7 +181,7 @@ export function useAppsScrollTimeline(
   onMounted(() => {
     gsap.registerPlugin(ScrollTrigger)
     desktopQuery = window.matchMedia(
-      `(min-width: ${APPS_DESKTOP_MIN_WIDTH}px) and (prefers-reduced-motion: no-preference)`,
+      `(min-width: ${DESKTOP_MIN_WIDTH}px) and ${MOTION_ALLOWED_QUERY}`,
     )
     handleModeChange(desktopQuery)
     desktopQuery.addEventListener('change', handleModeChange)

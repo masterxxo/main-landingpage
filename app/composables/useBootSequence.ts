@@ -29,7 +29,6 @@ export function useBoot() {
   }
 
   function toHeroReady() {
-    // Ustawiamy dopiero, gdy sekwencja bootowa faktycznie odsłoniła hero.
     if (phase.value === 'reveal' || phase.value === 'ready') {
       isHeroReady.value = true
     }

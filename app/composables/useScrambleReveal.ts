@@ -13,14 +13,6 @@ export interface ScrambleTarget {
   stop: () => void
 }
 
-/**
- * Odpala animację ScrambleLink, gdy element wjedzie w viewport.
- *
- *   const heading = useScrambleReveal()
- *   <ScrambleLink :ref="heading" text="APPS" :hover="false" />
- *
- * Zwrócony ref podpinasz przez `:ref="..."` (nie `ref="..."`).
- */
 export function useScrambleReveal(
   options: ScrambleRevealOptions = {},
 ): Ref<ScrambleTarget | null> {
