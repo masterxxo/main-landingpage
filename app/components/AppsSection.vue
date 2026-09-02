@@ -8,7 +8,7 @@
           class="apps-section__description"
           :active="sectionDescriptionActive"
           :ms-per-character="18"
-          text="Kilka aplikacji, w które można wejść i po prostu ich użyć — bez landing page'a, bez zapisywania się do newslettera. Zaczynam od jednej, będzie ich więcej."
+          text="A few apps you can open and simply use — no landing page, no newsletter signup. I am starting with one, and there will be more."
         />
       </header>
 
@@ -70,7 +70,7 @@ const apps: AppItem[] = [
     status: 'LIVE',
     statusClass: 'live',
     logo: '/img/soloquest_logo_transparent.png',
-    description: 'Tracker questów, który zbudowałem dla siebie — Nuxt 4, Hono i Drizzle na własnym serwerze. Testowa wersja tego, jak lubię teraz pisać software.',
+    description: 'A quest tracker I built for myself — Nuxt 4, Hono, and Drizzle on my own server. A test version of how I like to build software now.',
   },
   { name: 'App #2', status: 'IN PROGRESS', statusClass: 'progress' },
   { name: 'App #3', status: 'INCOMING', statusClass: 'incoming' },

@@ -22,11 +22,11 @@
           class="contact-section__description"
           :active="descriptionActive"
           :ms-per-character="18"
-          text="Nie prowadzę newslettera i nie mam formularza kontaktowego z dziesięcioma polami. Napisz maila albo złap mnie na X."
+          text="I do not run a newsletter or use a ten-field contact form. Send me an email or reach me on X."
         />
       </div>
 
-      <div class="contact-list" aria-label="Kanały kontaktowe">
+      <div class="contact-list" aria-label="Contact channels">
         <a
           v-for="(contact, index) in contacts"
           :key="contact.label"

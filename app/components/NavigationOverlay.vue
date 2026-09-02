@@ -6,7 +6,7 @@
           <HeaderScrollBackground />
           <button
             class="relative h-full w-16.75 flex flex-col items-center justify-center gap-1 cursor-pointer border border-transparent rounded-tl-lg hover:border-white"
-            :aria-label="isMenuOpen ? 'Zamknij menu' : 'Otwórz menu'"
+            :aria-label="isMenuOpen ? 'Close menu' : 'Open menu'"
             :aria-expanded="isMenuOpen"
             aria-controls="mobile-navigation"
             @click="isMenuOpen ? closeMenu() : isMenuOpen = true"
@@ -40,7 +40,7 @@
             v-if="isMenuOpen"
             id="mobile-navigation"
             class="mobile-navigation"
-            aria-label="Nawigacja"
+            aria-label="Navigation"
           >
             <div class="mobile-navigation__group">
               <span class="mobile-navigation__eyebrow">■ MENU</span>
@@ -137,8 +137,6 @@ function updateActiveSection(): void {
       return
     }
 
-    // On desktop ABOUT uses `display: contents`; use the hero's remaining
-    // scroll range as its visual boundary instead.
     if (aboutRect.height === 0 && hero) {
       const heroBottom = hero.getBoundingClientRect().bottom
       if (heroBottom <= window.innerHeight * 1.8) {
@@ -172,9 +170,6 @@ function navigateToAbout(event: MouseEvent): void {
   const section = document.getElementById('hero')
   if (!section) return
 
-  // ABOUT is rendered inside the pinned desktop hero and has no layout box of
-  // its own, so native hash navigation cannot reach the corresponding timeline
-  // state. Its copy is activated just before the hero section ends.
   event.preventDefault()
   const target = section.offsetTop + section.offsetHeight - window.innerHeight * 1.2
   window.history.pushState(null, '', '#about')

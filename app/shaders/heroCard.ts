@@ -1,5 +1,5 @@
 
-export const vertexShader = /* glsl */ `
+export const vertexShader = `
   uniform float uFlip;
   uniform float uPerspective;
   uniform float uApproach;
@@ -28,7 +28,7 @@ export const vertexShader = /* glsl */ `
   }
 `
 
-export const fragmentShader = /* glsl */ `
+export const fragmentShader = `
   precision highp float;
 
   uniform sampler2D uTexture;

@@ -7,7 +7,7 @@
       :class="{ 'is-expanded': expanded }"
       role="dialog"
       aria-modal="true"
-      aria-label="Odtwarzacz wideo"
+      aria-label="Video player"
       @click.self="requestClose"
     >
       <div class="video-modal__frame" :style="frameStyle">
@@ -15,7 +15,7 @@
           ref="closeBtn"
           type="button"
           class="video-modal__close"
-          aria-label="Zamknij"
+          aria-label="Close"
           @click="requestClose"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">

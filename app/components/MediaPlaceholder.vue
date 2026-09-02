@@ -10,7 +10,7 @@
       v-if="playOverlay"
       type="button"
       class="media-placeholder__overlay"
-      aria-label="Odtwórz wideo"
+      aria-label="Play video"
       @click="emitOpen"
     >
       <span class="media-placeholder__play" aria-hidden="true">
