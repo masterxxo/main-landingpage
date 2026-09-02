@@ -1,6 +1,7 @@
 <template>
   <section
     ref="section"
+    id="contact"
     class="contact-section"
     :style="{ backgroundImage: resolvedBackgroundImage }"
     aria-labelledby="contact-title"

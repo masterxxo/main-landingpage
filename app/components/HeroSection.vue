@@ -1,6 +1,7 @@
 <template>
   <section
     ref="section"
+    id="hero"
     class="hero-scroll"
     :class="{ 'is-video-visible': isVideoVisible, 'is-static': isStaticLayout }"
   >
@@ -97,7 +98,7 @@
         </div>
       </div>
 
-      <div ref="aboutSection" class="about-section">
+      <div id="about" ref="aboutSection" class="about-section">
         <div ref="aboutBg" class="about-bg" aria-hidden="true" />
         <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
         <img ref="aboutMobileImage" class="about-mobile-image" src="/img/about_img.jpeg" alt="" aria-hidden="true">

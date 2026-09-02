@@ -1,5 +1,5 @@
 <template>
-  <section ref="section" class="apps-section" aria-labelledby="apps-title">
+  <section id="apps" ref="section" class="apps-section" aria-labelledby="apps-title">
     <div ref="stage" class="apps-section__stage">
       <header class="apps-section__intro">
         <span class="apps-section__index">003</span>
