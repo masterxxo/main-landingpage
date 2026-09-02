@@ -1,6 +1,7 @@
 <template>
   <section
     ref="section"
+    id="hero"
     class="hero-scroll"
     :class="{ 'is-video-visible': isVideoVisible, 'is-static': isStaticLayout }"
   >
@@ -15,10 +16,13 @@
         <clipPath id="side-placeholder-clip" clipPathUnits="objectBoundingBox">
           <path :d="SIDE_PLACEHOLDER_CLIP" />
         </clipPath>
+        <clipPath id="about-mobile-clip" clipPathUnits="objectBoundingBox">
+          <path ref="aboutMobileClipPath" :d="HERO_CLIP_INITIAL" />
+        </clipPath>
       </defs>
     </svg>
 
-    <div class="hero-stage">
+    <div ref="heroStage" class="hero-stage">
       <div ref="grid" class="hero-grid" aria-hidden="true">
         <span class="hero-grid__vertical" />
         <span class="hero-grid__horizontal" />
@@ -94,16 +98,17 @@
         </div>
       </div>
 
-      <div class="about-section">
+      <div id="about" ref="aboutSection" class="about-section">
         <div ref="aboutBg" class="about-bg" aria-hidden="true" />
         <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
-        <img class="about-mobile-image" src="/img/about_img.jpeg" alt="" aria-hidden="true">
+        <img ref="aboutMobileImage" class="about-mobile-image" src="/img/about_img.jpeg" alt="" aria-hidden="true">
         <div ref="aboutCopy" class="about-copy">
-          <span class="about-copy__index">002</span>
-          <h2 class="about-copy__title">ABOUT</h2>
+          <span ref="aboutIndex" class="about-copy__index">002</span>
+          <h2 ref="aboutTitle" class="about-copy__title">ABOUT</h2>
           <AnimatedWriterText
             class="about-copy__text"
-            :active="hasReachedEnd"
+            :class="{ 'is-active': aboutActive }"
+            :active="aboutActive"
             :ms-per-character="18"
             text="8 years on the frontend — Vue, React, and everything that came with actually shipping products. On the side, I taught myself the backend too — curiosity doesn't wait for someone to greenlight it. Now I'm moving into product engineering: owning software end to end instead of just one layer of it. AI handles a lot of the code these days — I handle the thinking."
           />
@@ -123,7 +128,7 @@
 
 <script setup lang="ts">
 import type { VideoModalOrigin } from '~/components/VideoModal.vue'
-import { SIDE_PLACEHOLDER_CLIP, SMALL_PLACEHOLDER_CLIP } from '~/constants/heroClipPaths'
+import { HERO_CLIP_INITIAL, SIDE_PLACEHOLDER_CLIP, SMALL_PLACEHOLDER_CLIP } from '~/constants/heroClipPaths'
 import { HERO_LABELS, HERO_TIMELINE } from '~/constants/heroLayout'
 
 interface HeroLabel {
@@ -140,6 +145,7 @@ const labels: HeroLabel[] = [
 const { isRevealed, isVideoVisible, toHeroReady } = useBoot()
 
 const section = ref<HTMLElement | null>(null)
+const heroStage = ref<HTMLElement | null>(null)
 const heroCard = ref<HTMLElement | null>(null)
 const heroTilt = ref<HTMLElement | null>(null)
 const heroLabels = ref<HTMLElement | null>(null)
@@ -151,8 +157,14 @@ const heroBorder = ref<{ pathEl: SVGPathElement | null, root: SVGSVGElement | nu
 const smallPlaceholder = ref<{ root: HTMLElement | null } | null>(null)
 const sidePlaceholder = ref<{ root: HTMLElement | null } | null>(null)
 const aboutBg = ref<HTMLElement | null>(null)
+const aboutSection = ref<HTMLElement | null>(null)
+const aboutMobileImage = ref<HTMLImageElement | null>(null)
+const aboutMobileClipPath = ref<SVGPathElement | null>(null)
+const aboutIndex = ref<HTMLElement | null>(null)
+const aboutTitle = ref<HTMLElement | null>(null)
 const aboutSideLabel = ref<HTMLElement | null>(null)
 const aboutCopy = ref<HTMLElement | null>(null)
+const aboutActive = ref(false)
 
 const cardReveal = ref<number | undefined>(undefined)
 const cardShowSecond = ref(false)
@@ -183,6 +195,7 @@ function openVideo(rect: DOMRect): void {
 const scroll = useHeroScrollTimeline(
   {
     section,
+    stage: heroStage,
     card: heroCard,
     clipPath: heroClipPath,
     borderPath: computed(() => heroBorder.value?.pathEl ?? null),
@@ -205,14 +218,26 @@ const scroll = useHeroScrollTimeline(
   },
 )
 
-const { isStaticLayout, heroSettled, hasReachedEnd, restingCardPath } = scroll
+const { isStaticLayout, heroSettled, restingCardPath } = scroll
 const showEndContent = computed(() => isStaticLayout.value || heroSettled.value)
+useAboutReveal(
+  {
+    heroSection: section,
+    aboutSection,
+    image: aboutMobileImage,
+    clipPath: aboutMobileClipPath,
+    index: aboutIndex,
+    title: aboutTitle,
+  },
+  aboutActive,
+)
 
 const tilt = useCardTilt({
   surface: heroCard,
   target: heroTilt,
   enabled: () => scroll.getProgress() >= HERO_TIMELINE.tiltActiveFrom,
 })
+
 </script>
 
 <style scoped>
@@ -484,9 +509,9 @@ const tilt = useCardTilt({
   line-height: 1;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 968px) {
   .hero-scroll {
-    height: 200svh;
+    height: calc(205svh + var(--mobile-about-height, 100svh));
   }
 
   .hero-stage {
@@ -494,11 +519,69 @@ const tilt = useCardTilt({
     overflow: visible;
   }
 
-  .project-title,
-  .hero-media,
-  .hero-statement,
   .hero-grid {
-    display: none;
+    --hero-grid-x: 76%;
+    --hero-grid-y: 42%;
+  }
+
+  .project-title {
+    top: 11%;
+    left: 24px;
+    z-index: 5;
+    width: calc(100% - 48px);
+  }
+
+  .project-title h1 {
+    font-size: clamp(34px, 9.5vw, 62px);
+  }
+
+  .hero-media--small {
+    top: 45%;
+    left: 24px;
+    z-index: 5;
+    width: min(42vw, 240px);
+  }
+
+  .hero-media--side {
+    top: 48%;
+    right: 24px;
+    z-index: 5;
+    width: min(34vw, 210px);
+    height: 27svh;
+  }
+
+  .hero-statement {
+    bottom: 7%;
+    left: 24px;
+    z-index: 2;
+    width: min(66vw, 430px);
+    font-size: 14px;
+  }
+
+  .hero-card__annotation {
+    top: auto;
+    bottom: 18px;
+    left: auto;
+    right: 24px;
+  }
+
+  .hero-labels {
+    right: 24px;
+    bottom: 56px;
+    max-width: calc(100% - 48px);
+  }
+
+  .hero-label:not(:last-child) {
+    margin-bottom: -4px;
+  }
+
+  .hero-label__index {
+    font-size: 10px;
+  }
+
+  .hero-labels :deep(.scramble__text),
+  .hero-labels :deep(.scramble__sizer) {
+    font-size: clamp(40px, 10vw, 94px) !important;
   }
 
   .about-section {
@@ -522,11 +605,12 @@ const tilt = useCardTilt({
 
   .about-mobile-image {
     display: block;
-    width: 100%;
-    height: min(48svh, 520px);
+    align-self: center;
+    width: min(100%, 392px);
+    height: min(48svh, 392px);
     object-fit: cover;
     object-position: center 62%;
-    clip-path: url('#hero-card-clip');
+    clip-path: url('#about-mobile-clip');
   }
 
   .about-copy {
@@ -544,11 +628,44 @@ const tilt = useCardTilt({
   }
 
   .about-copy__text {
+    min-height: 210px;
+    opacity: 0;
     font-size: 14px;
+    transition: opacity 220ms ease;
+  }
+
+  .about-copy__text.is-active {
+    opacity: 1;
   }
 }
 
-@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+@media (min-width: 969px) and (max-width: 1023px) {
+  .hero-labels {
+    right: 64px;
+  }
+
+  .hero-label:not(:last-child) {
+    margin-bottom: -8px;
+  }
+
+  .hero-labels :deep(.scramble__text),
+  .hero-labels :deep(.scramble__sizer) {
+    font-size: 82px !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .hero-labels {
+    right: clamp(64px, 9vw, 126px);
+  }
+
+  .hero-labels :deep(.scramble__text),
+  .hero-labels :deep(.scramble__sizer) {
+    font-size: calc(82px + (100vw - 1024px) * 0.155) !important;
+  }
+}
+
+@media (min-width: 969px) and (prefers-reduced-motion: reduce) {
   .hero-scroll {
     height: 100svh;
   }
@@ -569,6 +686,12 @@ const tilt = useCardTilt({
   .about-sidelabel,
   .about-copy {
     display: none;
+  }
+}
+
+@media (max-width: 968px) and (prefers-reduced-motion: reduce) {
+  .about-copy__text {
+    transition: none;
   }
 }
 </style>

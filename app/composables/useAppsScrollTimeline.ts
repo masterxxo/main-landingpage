@@ -22,8 +22,7 @@ export function useAppsScrollTimeline(
 ): void {
   let entrance: gsap.core.Tween | null = null
   let timeline: gsap.core.Timeline | null = null
-  let desktopQuery: MediaQueryList | null = null
-  let observers: IntersectionObserver[] = []
+  let media: gsap.MatchMedia | null = null
   let soloPeakProgress = 1
   let soloPeakReached = false
 
@@ -115,39 +114,74 @@ export function useAppsScrollTimeline(
   }
 
   function buildMobile(): void {
-    if (!els.section.value || !els.stage.value) return
+    if (!els.section.value || !els.stage.value || els.cards.value.length !== 3) return
 
-    gsap.set(els.stage.value, { clearProps: 'all' })
+    const cards = els.cards.value
+    const detailTargets = cards.map(card => card.querySelector<HTMLElement>('.app-card__body'))
+    const iconTargets = cards.map(card => [
+      card.querySelector<HTMLElement>('.app-card__icon'),
+      card.querySelector<HTMLElement>('.app-card__icon-placeholder'),
+    ].filter((target): target is HTMLElement => target !== null))
 
-    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) {
-      hooks.onSectionActive()
-      els.cards.value.forEach((card, index) => {
-        gsap.set(card, { clearProps: 'all' })
-        hooks.onMobileCardActive(index)
+    gsap.set(cards, { flexGrow: 1, opacity: 0.62 })
+    gsap.set(detailTargets, { scale: 0.88, transformOrigin: 'left bottom' })
+    gsap.set(iconTargets.flat(), { scale: 0.9, y: 8 })
+
+    timeline = gsap.timeline({
+      defaults: { ease: 'power2.inOut' },
+      scrollTrigger: {
+        trigger: els.section.value,
+        start: 'top top',
+        end: () => `+=${Math.round(window.innerHeight * (cards.length * 1.15 + 0.45))}`,
+        pin: true,
+        scrub: 0.85,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        onEnter: hooks.onSectionActive,
+        onEnterBack: hooks.onSectionActive,
+      },
+    })
+
+    timeline.to({}, { duration: 0.35 })
+
+    cards.forEach((card, activeIndex) => {
+      const expandAt = timeline!.duration()
+
+      cards.forEach((target, index) => {
+        timeline!.to(target, {
+          flexGrow: index === activeIndex ? 3.4 : 0.72,
+          opacity: index === activeIndex ? 1 : 0.38,
+          duration: 0.72,
+        }, expandAt)
+        timeline!.to(detailTargets[index], {
+          scale: index === activeIndex ? 1 : 0.84,
+          duration: 0.72,
+        }, expandAt)
+        timeline!.to(iconTargets[index] ?? [], {
+          scale: index === activeIndex ? 1.18 : 0.86,
+          y: index === activeIndex ? 0 : 8,
+          duration: 0.72,
+        }, expandAt)
       })
-      return
-    }
 
-    const sectionObserver = new IntersectionObserver(([entry]) => {
-      if (!entry?.isIntersecting) return
-      hooks.onSectionActive()
-      sectionObserver.disconnect()
-    }, { threshold: 0.15 })
-    sectionObserver.observe(els.section.value)
-    observers.push(sectionObserver)
+      timeline!.call(() => hooks.onMobileCardActive(activeIndex))
+      timeline!.to({}, { duration: 0.48 })
 
-    els.cards.value.forEach((card, index) => {
-      gsap.set(card, { autoAlpha: 0, y: 40, clearProps: 'flex-grow' })
-      const observer = new IntersectionObserver(([entry]) => {
-        if (!entry?.isIntersecting) return
-
-        gsap.to(card, { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out' })
-        hooks.onMobileCardActive(index)
-        observer.disconnect()
-      }, { threshold: 0.25 })
-
-      observer.observe(card)
-      observers.push(observer)
+      const collapseAt = timeline!.duration()
+      timeline!.to(cards, {
+        flexGrow: 1,
+        opacity: 0.62,
+        duration: 0.52,
+      }, collapseAt)
+      timeline!.to(detailTargets, {
+        scale: 0.88,
+        duration: 0.52,
+      }, collapseAt)
+      timeline!.to(iconTargets.flat(), {
+        scale: 0.9,
+        y: 8,
+        duration: 0.52,
+      }, collapseAt)
     })
   }
 
@@ -159,36 +193,46 @@ export function useAppsScrollTimeline(
     entrance = null
     timeline = null
     soloPeakReached = false
-    observers.forEach(observer => observer.disconnect())
-    observers = []
-
     if (els.stage.value) gsap.set(els.stage.value, { clearProps: 'opacity,visibility,transform' })
     els.cards.value.forEach(card => {
       gsap.set(card, { clearProps: 'opacity,visibility,transform,flex-grow' })
-      gsap.set(card.querySelectorAll('.app-card__icon, .app-card__icon-placeholder, .app-card__name'), {
+      gsap.set(card.querySelectorAll('.app-card__body, .app-card__icon, .app-card__icon-placeholder, .app-card__name'), {
         clearProps: 'transform',
       })
     })
   }
 
-  function handleModeChange(query: MediaQueryList | MediaQueryListEvent): void {
-    teardown()
-    if (query.matches) buildDesktop()
-    else buildMobile()
-    ScrollTrigger.refresh()
-  }
-
   onMounted(() => {
     gsap.registerPlugin(ScrollTrigger)
-    desktopQuery = window.matchMedia(
-      `(min-width: ${DESKTOP_MIN_WIDTH}px) and ${MOTION_ALLOWED_QUERY}`,
-    )
-    handleModeChange(desktopQuery)
-    desktopQuery.addEventListener('change', handleModeChange)
+    media = gsap.matchMedia()
+    media.add({
+      desktop: `(min-width: ${DESKTOP_MIN_WIDTH}px)`,
+      mobile: `(max-width: ${DESKTOP_MIN_WIDTH - 1}px)`,
+      portrait: '(orientation: portrait)',
+      motionAllowed: MOTION_ALLOWED_QUERY,
+      reducedMotion: REDUCED_MOTION_QUERY,
+    }, (context) => {
+      const { desktop, mobile, motionAllowed, reducedMotion } = context.conditions as Record<string, boolean>
+
+      teardown()
+      if (reducedMotion) {
+        hooks.onSectionActive()
+        els.cards.value.forEach((card, index) => {
+          gsap.set(card, { clearProps: 'all' })
+          hooks.onMobileCardActive(index)
+        })
+      }
+      else if (motionAllowed && desktop) buildDesktop()
+      else if (motionAllowed && mobile) buildMobile()
+
+      ScrollTrigger.refresh()
+      return teardown
+    })
   })
 
   onBeforeUnmount(() => {
-    desktopQuery?.removeEventListener('change', handleModeChange)
+    media?.revert()
+    media = null
     teardown()
   })
 }
