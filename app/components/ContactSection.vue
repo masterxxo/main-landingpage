@@ -54,6 +54,7 @@
 import type { Component, ComponentPublicInstance } from 'vue'
 import ContactEmailIcon from '~/components/icons/ContactEmailIcon.vue'
 import ContactXIcon from '~/components/icons/ContactXIcon.vue'
+import { CONTACT_LINKS } from '~/constants/contact'
 
 const props = defineProps<{
   backgroundImage?: string
@@ -69,15 +70,11 @@ interface ContactItem {
 
 const contacts: ContactItem[] = [
   {
-    label: 'E-MAIL',
-    value: 'kontakt@matrog.pl',
-    href: 'mailto:kontakt@matrog.pl',
+    ...CONTACT_LINKS.email,
     icon: ContactEmailIcon,
   },
   {
-    label: 'X / TWITTER',
-    value: '@rogson_dev',
-    href: 'https://x.com/rogson_dev',
+    ...CONTACT_LINKS.x,
     icon: ContactXIcon,
     external: true,
   },
