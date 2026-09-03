@@ -73,8 +73,13 @@
           <div>
             </div>
           <div class="mb-6">
-            <button class="flex items-center space-x-0.5 cursor-pointer" @click="toggleAudioLoop">
-              <audio class="hidden"></audio>
+            <button
+              class="flex items-center space-x-0.5 cursor-pointer"
+              type="button"
+              :aria-pressed="isAudioPlaying"
+              :aria-label="`Audio ${isAudioPlaying ? 'off' : 'on'}`"
+              @click="toggleAudioLoop"
+            >
               <span class="rail-audio-icon" aria-hidden="true">
                 <span v-for="index in 4" :key="index" class="indicator-line" :class="isAudioPlaying ? 'active' : ''" :style="{ animationDelay: `${index * 0.1}s` }" />
               </span>
@@ -90,7 +95,7 @@
 import type { ScrambleTarget } from '~/composables/useScrambleReveal'
 import { CONTACT_LINKS } from '~/constants/contact'
 
-const isAudioPlaying = ref(false);
+const { isPlaying: isAudioPlaying, toggle: toggleAudioLoop } = useAudioLoop()
 const isMenuOpen = ref(false)
 const activeSection = ref<'hero' | 'about' | 'apps'>('hero')
 const mobileScrambles = ref<ScrambleTarget[]>([])
@@ -174,10 +179,6 @@ function navigateToAbout(event: MouseEvent): void {
   const target = section.offsetTop + section.offsetHeight - window.innerHeight * 1.2
   window.history.pushState(null, '', '#about')
   window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' })
-}
-
-const toggleAudioLoop = () => {
-  isAudioPlaying.value = !isAudioPlaying.value
 }
 </script>
 
