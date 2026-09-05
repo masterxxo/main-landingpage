@@ -6,7 +6,7 @@
           <HeaderScrollBackground />
           <button
             class="relative h-full w-16.75 flex flex-col items-center justify-center gap-1 cursor-pointer border border-transparent rounded-tl-lg hover:border-white"
-            :aria-label="isMenuOpen ? 'Close menu' : 'Open menu'"
+            :aria-label="isMenuOpen ? $t('nav.closeMenu') : $t('nav.openMenu')"
             :aria-expanded="isMenuOpen"
             aria-controls="mobile-navigation"
             @click="isMenuOpen ? closeMenu() : isMenuOpen = true"
@@ -26,7 +26,7 @@
               <ScrambleLink
                 ref="contactScramble"
                 class="contact-btn__label"
-                text="CONTACT"
+                :text="$t('nav.contact')"
                 plain
                 text-color="currentColor"
                 :font-weight="600"
@@ -40,29 +40,29 @@
             v-if="isMenuOpen"
             id="mobile-navigation"
             class="mobile-navigation"
-            aria-label="Navigation"
+            :aria-label="$t('nav.navigation')"
           >
             <div class="mobile-navigation__group">
-              <span class="mobile-navigation__eyebrow">■ MENU</span>
+              <span class="mobile-navigation__eyebrow">{{ $t('nav.menuEyebrow') }}</span>
               <nav class="mobile-navigation__links">
-              <a href="#hero" class="mobile-navigation__item" :class="{ 'is-active': activeSection === 'hero' }" @click="closeMenu"><span class="mobile-navigation__index">001</span><ScrambleLink :ref="el => setMobileScramble(el, 0)" text="HERO" plain sequential :text-color="activeSection === 'hero' ? '#05060a' : '#fff'" /></a>
-              <a href="#about" class="mobile-navigation__item" :class="{ 'is-active': activeSection === 'about' }" @click="handleMobileAbout"><span class="mobile-navigation__index">002</span><ScrambleLink :ref="el => setMobileScramble(el, 1)" text="ABOUT" plain sequential :text-color="activeSection === 'about' ? '#05060a' : '#fff'" /></a>
-              <a href="#apps" class="mobile-navigation__item" :class="{ 'is-active': activeSection === 'apps' }" @click="closeMenu"><span class="mobile-navigation__index">003</span><ScrambleLink :ref="el => setMobileScramble(el, 2)" text="APPS" plain sequential :text-color="activeSection === 'apps' ? '#05060a' : '#fff'" /></a>
+              <a href="#hero" class="mobile-navigation__item" :class="{ 'is-active': activeSection === 'hero' }" @click="closeMenu"><span class="mobile-navigation__index">001</span><ScrambleLink :ref="el => setMobileScramble(el, 0)" :text="$t('nav.links.hero')" plain sequential :text-color="activeSection === 'hero' ? '#05060a' : '#fff'" /></a>
+              <a href="#about" class="mobile-navigation__item" :class="{ 'is-active': activeSection === 'about' }" @click="handleMobileAbout"><span class="mobile-navigation__index">002</span><ScrambleLink :ref="el => setMobileScramble(el, 1)" :text="$t('nav.links.about')" plain sequential :text-color="activeSection === 'about' ? '#05060a' : '#fff'" /></a>
+              <a href="#apps" class="mobile-navigation__item" :class="{ 'is-active': activeSection === 'apps' }" @click="closeMenu"><span class="mobile-navigation__index">003</span><ScrambleLink :ref="el => setMobileScramble(el, 2)" :text="$t('nav.links.apps')" plain sequential :text-color="activeSection === 'apps' ? '#05060a' : '#fff'" /></a>
               </nav>
             </div>
             <div class="mobile-navigation__connect">
-              <span class="mobile-navigation__eyebrow">■ CONNECT</span>
+              <span class="mobile-navigation__eyebrow">{{ $t('nav.connectEyebrow') }}</span>
               <div class="mobile-navigation__connect-links">
                 <a :href="CONTACT_LINKS.email.href">E-MAIL</a>
                 <a :href="CONTACT_LINKS.x.href" target="_blank" rel="noopener noreferrer">X</a>
               </div>
             </div>
             <div class="mobile-navigation__audio">
-              <button class="mobile-navigation__audio-button" type="button" :aria-pressed="isAudioPlaying" :aria-label="`Audio ${isAudioPlaying ? 'off' : 'on'}`" @click="toggleAudioLoop">
+              <button class="mobile-navigation__audio-button" type="button" :aria-pressed="isAudioPlaying" :aria-label="isAudioPlaying ? $t('nav.audioOff') : $t('nav.audioOn')" @click="toggleAudioLoop">
                 <span class="mobile-navigation__audio-icon" aria-hidden="true">
                   <span v-for="index in 4" :key="index" class="indicator-line" :class="isAudioPlaying ? 'active' : ''" :style="{ animationDelay: `${index * 0.1}s` }" />
                 </span>
-                <span class="mobile-navigation__audio-label">AUDIO {{ isAudioPlaying ? 'OFF' : 'ON' }}</span>
+                <span class="mobile-navigation__audio-label">{{ isAudioPlaying ? $t('nav.audioOffLabel') : $t('nav.audioOnLabel') }}</span>
               </button>
             </div>
           </aside>
@@ -77,7 +77,7 @@
               class="flex items-center space-x-0.5 cursor-pointer"
               type="button"
               :aria-pressed="isAudioPlaying"
-              :aria-label="`Audio ${isAudioPlaying ? 'off' : 'on'}`"
+              :aria-label="isAudioPlaying ? $t('nav.audioOff') : $t('nav.audioOn')"
               @click="toggleAudioLoop"
             >
               <span class="rail-audio-icon" aria-hidden="true">

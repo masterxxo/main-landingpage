@@ -42,13 +42,13 @@
             @revealed="handleHeroRevealed"
           />
           <ClipBorder ref="heroBorder" class="hero-card__border" :path="restingCardPath" />
-          <span ref="heroAnnotation" class="hero-card__annotation">IMAGE / 03</span>
+          <span ref="heroAnnotation" class="hero-card__annotation">{{ $t('hero.annotation') }}</span>
         </div>
       </div>
 
       <div ref="title" class="project-title">
-        <span class="project-title__index">001</span>
-        <h1>STAY CURIOUS.<br>EVERYTHING ELSE FOLLOWS.</h1>
+        <span class="project-title__index">{{ $t('hero.index') }}</span>
+        <h1>{{ $t('hero.titleLine1') }}<br>{{ $t('hero.titleLine2') }}</h1>
       </div>
 
       <MediaPlaceholder
@@ -56,7 +56,7 @@
         class="hero-media hero-media--small"
         clip-id="small-placeholder-clip"
         :path="SMALL_PLACEHOLDER_CLIP"
-        label="IMAGE / 01"
+        :label="$t('hero.image1Label')"
         image="/img/hero_image_1.jpeg"
       />
 
@@ -65,7 +65,7 @@
         class="hero-media hero-media--side"
         clip-id="side-placeholder-clip"
         :path="SIDE_PLACEHOLDER_CLIP"
-        label="IMAGE / 02"
+        :label="$t('hero.image2Label')"
         image="/img/hero_image_2.jpeg"
         play-overlay
         @open="openVideo"
@@ -74,7 +74,7 @@
       <AnimatedWriterText
         class="hero-statement"
         :active="showEndContent"
-        text="Eight years of writing code taught me how software should work. Now AI writes it, and I do what I always wanted to do — build the software. Same curiosity, different job. Less typing, more thinking."
+        :text="$t('hero.statement')"
       />
 
       <div v-show="labelsShown" ref="heroLabels" class="hero-labels">
@@ -100,17 +100,17 @@
 
       <div id="about" ref="aboutSection" class="about-section">
         <div ref="aboutBg" class="about-bg" aria-hidden="true" />
-        <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">ROGSON</span>
+        <span ref="aboutSideLabel" class="about-sidelabel" aria-hidden="true">{{ $t('about.sideLabel') }}</span>
         <img ref="aboutMobileImage" class="about-mobile-image" src="/img/about_img.jpeg" alt="" aria-hidden="true">
         <div ref="aboutCopy" class="about-copy">
-          <span ref="aboutIndex" class="about-copy__index">002</span>
-          <h2 ref="aboutTitle" class="about-copy__title">ABOUT</h2>
+          <span ref="aboutIndex" class="about-copy__index">{{ $t('about.index') }}</span>
+          <h2 ref="aboutTitle" class="about-copy__title">{{ $t('about.title') }}</h2>
           <AnimatedWriterText
             class="about-copy__text"
             :class="{ 'is-active': aboutActive }"
             :active="aboutActive"
             :ms-per-character="18"
-            text="8 years on the frontend — Vue, React, and everything that came with actually shipping products. On the side, I taught myself the backend too — curiosity doesn't wait for someone to greenlight it. Now I'm moving into product engineering: owning software end to end instead of just one layer of it. AI handles a lot of the code these days — I handle the thinking."
+            :text="$t('about.text')"
           />
         </div>
       </div>
@@ -136,11 +136,13 @@ interface HeroLabel {
   text: string
 }
 
-const labels: HeroLabel[] = [
-  { index: '01R', text: 'LEARN.' },
-  { index: '02O', text: 'CREATE.' },
-  { index: '03G', text: 'BE CURIOUS.' },
-]
+const { t } = useI18n()
+
+const labels = computed<HeroLabel[]>(() => [
+  { index: '01R', text: t('hero.labels.learn') },
+  { index: '02O', text: t('hero.labels.create') },
+  { index: '03G', text: t('hero.labels.beCurious') },
+])
 
 const { isRevealed, isVideoVisible, toHeroReady } = useBoot()
 
@@ -175,7 +177,7 @@ const {
   setTarget: setLabelTarget,
   play: playLabelReveal,
 } = useHeroLabelReveal({
-  texts: labels.map(label => label.text),
+  texts: labels.value.map(label => label.text),
   onComplete: toHeroReady,
 })
 

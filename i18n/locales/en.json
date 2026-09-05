@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "navigation": "Navigation",
+    "menuEyebrow": "■ MENU",
+    "connectEyebrow": "■ CONNECT",
+    "contact": "CONTACT",
+    "audioOn": "Audio on",
+    "audioOff": "Audio off",
+    "audioOnLabel": "AUDIO ON",
+    "audioOffLabel": "AUDIO OFF",
+    "switchLanguage": "Switch language",
+    "links": {
+      "hero": "HERO",
+      "about": "ABOUT",
+      "apps": "APPS"
+    }
+  },
+  "hero": {
+    "index": "001",
+    "titleLine1": "STAY CURIOUS.",
+    "titleLine2": "EVERYTHING ELSE FOLLOWS.",
+    "annotation": "IMAGE / 03",
+    "image1Label": "IMAGE / 01",
+    "image2Label": "IMAGE / 02",
+    "statement": "Eight years of writing code taught me how software should work. Now AI writes it, and I do what I always wanted to do — build the software. Same curiosity, different job. Less typing, more thinking.",
+    "labels": {
+      "learn": "LEARN.",
+      "create": "CREATE.",
+      "beCurious": "BE CURIOUS."
+    }
+  },
+  "about": {
+    "index": "002",
+    "title": "ABOUT",
+    "sideLabel": "ROGSON",
+    "text": "8 years on the frontend — Vue, React, and everything that came with actually shipping products. On the side, I taught myself the backend too — curiosity doesn't wait for someone to greenlight it. Now I'm moving into product engineering: owning software end to end instead of just one layer of it. AI handles a lot of the code these days — I handle the thinking."
+  },
+  "apps": {
+    "index": "003",
+    "title": "APPS",
+    "description": "A few apps you can open and simply use — no landing page, no newsletter signup. I am starting with one, and there will be more.",
+    "items": {
+      "soloquest": {
+        "name": "SoloQuest",
+        "status": "LIVE",
+        "description": "A quest tracker I built for myself — Nuxt 4, Hono, and Drizzle on my own server. A test version of how I like to build software now."
+      },
+      "app2": {
+        "name": "App #2",
+        "status": "IN PROGRESS"
+      },
+      "app3": {
+        "name": "App #3",
+        "status": "INCOMING"
+      }
+    }
+  },
+  "contact": {
+    "index": "004",
+    "eyebrow": "// GET IN TOUCH",
+    "titleLine1": "STILL CURIOUS.",
+    "titleLine2": "STILL AVAILABLE.",
+    "description": "I do not run a newsletter or use a ten-field contact form. Send me an email or reach me on X.",
+    "channelsAriaLabel": "Contact channels",
+    "links": {
+      "email": {
+        "label": "E-MAIL"
+      },
+      "x": {
+        "label": "X / TWITTER"
+      }
+    }
+  },
+  "media": {
+    "playVideo": "Play video"
+  },
+  "videoModal": {
+    "player": "Video player",
+    "close": "Close",
+    "youtube": "YouTube"
+  },
+  "loader": {
+    "loading": "LOADING: {percent}%"
+  }
+}

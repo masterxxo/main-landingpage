@@ -32,6 +32,10 @@ const props = withDefaults(defineProps<ScrambleLinkProps>(), {
 
 const displayed = ref(props.text)
 const isActive = ref(false)
+
+watch(() => props.text, (newText) => {
+  if (!rafId) displayed.value = newText
+})
 const animatedCharacterCount = computed<number>(
   () => [...props.text].filter((char: string) => char !== ' ').length,
 )

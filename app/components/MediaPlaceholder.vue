@@ -10,7 +10,7 @@
       v-if="playOverlay"
       type="button"
       class="media-placeholder__overlay"
-      aria-label="Play video"
+      :aria-label="$t('media.playVideo')"
       @click="emitOpen"
     >
       <span class="media-placeholder__play" aria-hidden="true">

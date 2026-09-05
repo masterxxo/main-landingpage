@@ -10,10 +10,10 @@
 
     <div class="contact-section__content">
       <div ref="heading" class="contact-section__heading">
-        <span class="contact-section__index">004</span>
-        <span class="contact-section__eyebrow">// GET IN TOUCH</span>
+        <span class="contact-section__index">{{ $t('contact.index') }}</span>
+        <span class="contact-section__eyebrow">{{ $t('contact.eyebrow') }}</span>
         <h2 id="contact-title" class="contact-section__title">
-          STILL CURIOUS.<br>STILL AVAILABLE.
+          {{ $t('contact.titleLine1') }}<br>{{ $t('contact.titleLine2') }}
         </h2>
 
         <span class="contact-section__horizontal-line" aria-hidden="true" />
@@ -22,14 +22,14 @@
           class="contact-section__description"
           :active="descriptionActive"
           :ms-per-character="18"
-          text="I do not run a newsletter or use a ten-field contact form. Send me an email or reach me on X."
+          :text="$t('contact.description')"
         />
       </div>
 
-      <div class="contact-list" aria-label="Contact channels">
+      <div class="contact-list" :aria-label="$t('contact.channelsAriaLabel')">
         <a
           v-for="(contact, index) in contacts"
-          :key="contact.label"
+          :key="contact.id"
           :ref="element => setContactRef(element, index)"
           class="contact-list__item"
           :href="contact.href"
@@ -61,6 +61,7 @@ const props = defineProps<{
 }>()
 
 interface ContactItem {
+  id: string
   label: string
   value: string
   href: string
@@ -68,17 +69,23 @@ interface ContactItem {
   external?: boolean
 }
 
-const contacts: ContactItem[] = [
+const { t } = useI18n()
+
+const contacts = computed<ContactItem[]>(() => [
   {
+    id: 'email',
     ...CONTACT_LINKS.email,
+    label: t('contact.links.email.label'),
     icon: ContactEmailIcon,
   },
   {
+    id: 'x',
     ...CONTACT_LINKS.x,
+    label: t('contact.links.x.label'),
     icon: ContactXIcon,
     external: true,
   },
-]
+])
 
 const resolvedBackgroundImage = computed(() => props.backgroundImage
   ? `url("${props.backgroundImage}")`

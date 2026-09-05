@@ -7,7 +7,7 @@
       :class="{ 'is-expanded': expanded }"
       role="dialog"
       aria-modal="true"
-      aria-label="Video player"
+      :aria-label="$t('videoModal.player')"
       @click.self="requestClose"
     >
       <div class="video-modal__frame" :style="frameStyle">
@@ -15,7 +15,7 @@
           ref="closeBtn"
           type="button"
           class="video-modal__close"
-          aria-label="Close"
+          :aria-label="$t('videoModal.close')"
           @click="requestClose"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -28,7 +28,7 @@
             v-if="showIframe"
             class="video-modal__iframe"
             :src="embedSrc"
-            title="YouTube"
+            :title="$t('videoModal.youtube')"
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowfullscreen
           />

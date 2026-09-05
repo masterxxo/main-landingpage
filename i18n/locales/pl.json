@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "openMenu": "Otwórz menu",
+    "closeMenu": "Zamknij menu",
+    "navigation": "Nawigacja",
+    "menuEyebrow": "■ MENU",
+    "connectEyebrow": "■ KONTAKT",
+    "contact": "KONTAKT",
+    "audioOn": "Włącz dźwięk",
+    "audioOff": "Wyłącz dźwięk",
+    "audioOnLabel": "DŹWIĘK: WŁ.",
+    "audioOffLabel": "DŹWIĘK: WYŁ.",
+    "switchLanguage": "Przełącz język",
+    "links": {
+      "hero": "START",
+      "about": "O MNIE",
+      "apps": "APLIKACJE"
+    }
+  },
+  "hero": {
+    "index": "001",
+    "titleLine1": "ZACHOWAJ CIEKAWOŚĆ.",
+    "titleLine2": "RESZTA PRZYJDZIE SAMA.",
+    "annotation": "OBRAZ / 03",
+    "image1Label": "OBRAZ / 01",
+    "image2Label": "OBRAZ / 02",
+    "statement": "Osiem lat pisania kodu nauczyło mnie, jak powinno działać dobre oprogramowanie. Teraz kod pisze AI, a ja robię to, co zawsze chciałem robić — buduję oprogramowanie. Ta sama ciekawość, inna praca. Mniej pisania, więcej myślenia.",
+    "labels": {
+      "learn": "UCZ SIĘ.",
+      "create": "TWÓRZ.",
+      "beCurious": "BĄDŹ CIEKAWY."
+    }
+  },
+  "about": {
+    "index": "002",
+    "title": "O MNIE",
+    "sideLabel": "ROGSON",
+    "text": "8 lat we frontendzie — Vue, React i wszystko, co wiąże się z realnym wdrażaniem produktów. Po godzinach nauczyłem się też backendu — ciekawość nie czeka na czyjeś pozwolenie. Teraz przechodzę w stronę product engineeringu: biorę odpowiedzialność za oprogramowanie od początku do końca, a nie tylko za jedną jego warstwę. AI pisze dziś dużą część kodu — ja zajmuję się myśleniem."
+  },
+  "apps": {
+    "index": "003",
+    "title": "APLIKACJE",
+    "description": "Kilka aplikacji, które można po prostu otworzyć i używać — bez landing page'a, bez zapisu na newsletter. Zaczynam od jednej, będzie ich więcej.",
+    "items": {
+      "soloquest": {
+        "name": "SoloQuest",
+        "status": "DOSTĘPNE",
+        "description": "Tracker questów, który zbudowałem dla siebie — Nuxt 4, Hono i Drizzle na własnym serwerze. Testowa wersja tego, jak lubię teraz budować oprogramowanie."
+      },
+      "app2": {
+        "name": "Aplikacja #2",
+        "status": "W TRAKCIE"
+      },
+      "app3": {
+        "name": "Aplikacja #3",
+        "status": "WKRÓTCE"
+      }
+    }
+  },
+  "contact": {
+    "index": "004",
+    "eyebrow": "// SKONTAKTUJ SIĘ",
+    "titleLine1": "WCIĄŻ CIEKAWY.",
+    "titleLine2": "WCIĄŻ DOSTĘPNY.",
+    "description": "Nie prowadzę newslettera ani formularza kontaktowego z dziesięcioma polami. Napisz do mnie maila albo znajdź mnie na X.",
+    "channelsAriaLabel": "Kanały kontaktu",
+    "links": {
+      "email": {
+        "label": "E-MAIL"
+      },
+      "x": {
+        "label": "X / TWITTER"
+      }
+    }
+  },
+  "media": {
+    "playVideo": "Odtwórz wideo"
+  },
+  "videoModal": {
+    "player": "Odtwarzacz wideo",
+    "close": "Zamknij",
+    "youtube": "YouTube"
+  },
+  "loader": {
+    "loading": "ŁADOWANIE: {percent}%"
+  }
+}

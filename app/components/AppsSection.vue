@@ -2,20 +2,20 @@
   <section id="apps" ref="section" class="apps-section" aria-labelledby="apps-title">
     <div ref="stage" class="apps-section__stage">
       <header class="apps-section__intro">
-        <span class="apps-section__index">003</span>
-        <h2 id="apps-title" class="apps-section__title">APPS</h2>
+        <span class="apps-section__index">{{ $t('apps.index') }}</span>
+        <h2 id="apps-title" class="apps-section__title">{{ $t('apps.title') }}</h2>
         <AnimatedWriterText
           class="apps-section__description"
           :active="sectionDescriptionActive"
           :ms-per-character="18"
-          text="A few apps you can open and simply use — no landing page, no newsletter signup. I am starting with one, and there will be more."
+          :text="$t('apps.description')"
         />
       </header>
 
       <div class="apps-track">
         <article
           v-for="(app, index) in apps"
-          :key="app.name"
+          :key="app.id"
           :ref="element => setCardRef(element, index)"
           class="app-card"
         >
@@ -56,6 +56,7 @@
 import type { Component, ComponentPublicInstance } from 'vue'
 
 interface AppItem {
+  id: string
   name: string
   status: string
   statusClass: string
@@ -64,23 +65,26 @@ interface AppItem {
   icon?: Component
 }
 
-const apps: AppItem[] = [
+const { t } = useI18n()
+
+const apps = computed<AppItem[]>(() => [
   {
-    name: 'SoloQuest',
-    status: 'LIVE',
+    id: 'soloquest',
+    name: t('apps.items.soloquest.name'),
+    status: t('apps.items.soloquest.status'),
     statusClass: 'live',
     logo: '/img/soloquest_logo_transparent.png',
-    description: 'A quest tracker I built for myself — Nuxt 4, Hono, and Drizzle on my own server. A test version of how I like to build software now.',
+    description: t('apps.items.soloquest.description'),
   },
-  { name: 'App #2', status: 'IN PROGRESS', statusClass: 'progress' },
-  { name: 'App #3', status: 'INCOMING', statusClass: 'incoming' },
-]
+  { id: 'app2', name: t('apps.items.app2.name'), status: t('apps.items.app2.status'), statusClass: 'progress' },
+  { id: 'app3', name: t('apps.items.app3.name'), status: t('apps.items.app3.status'), statusClass: 'incoming' },
+])
 
 const section = ref<HTMLElement | null>(null)
 const stage = ref<HTMLElement | null>(null)
 const cards = ref<HTMLElement[]>([])
 const sectionDescriptionActive = ref(false)
-const appDescriptionActive = ref(apps.map(() => false))
+const appDescriptionActive = ref(apps.value.map(() => false))
 
 function setCardRef(element: Element | ComponentPublicInstance | null, index: number): void {
   if (element instanceof HTMLElement) cards.value[index] = element

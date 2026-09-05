@@ -7,7 +7,7 @@
         </div>
 
         <div class="boot__meta">
-          <span class="boot__pct">LOADING: {{ percent }}%</span>
+          <span class="boot__pct">{{ $t('loader.loading', { percent }) }}</span>
           <span class="boot__log">{{ logLines[currentLine] }}</span>
         </div>
       </div>
